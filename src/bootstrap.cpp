@@ -62,5 +62,7 @@ int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
     create_project_files(polygon4_dir);
     build_project(polygon4_dir);
 
+    PRINT("Bootstraped Polygon-4 successfully");
+
     return 0;
 }

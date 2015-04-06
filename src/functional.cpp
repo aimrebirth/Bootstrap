@@ -83,6 +83,7 @@ void run_cmake(path dir)
         "-G", "Visual Studio 12 Win64" });
     if (!exists(sln_file))
         check_return_code(1);
+    SPACE();
 }
 
 void download_files(path dir, path output_dir, const pt::ptree &files, string file_prefix)
@@ -124,6 +125,7 @@ void unpack(string file, string output_dir, bool exit_on_error)
 {
     PRINT("Unpacking file: " << file);
     execute_command({_7z, "x", "-y", "-o" + output_dir, file}, exit_on_error);
+    SPACE();
 }
 
 bool copy_dir(const path &source, const path &destination)
@@ -269,6 +271,7 @@ Bytes download(string url)
 {
     PRINT("Downloading file: " << url);
     return execute_command({ curl, "-L", "-k", "-s", url }, true, capture_stream()).bytes;
+    SPACE();
 }
 
 void download(string url, string file)
