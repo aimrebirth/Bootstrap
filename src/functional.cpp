@@ -267,6 +267,7 @@ pt::ptree load_data()
 
 Bytes download(string url)
 {
+    PRINT("Downloading file: " << url);
     return execute_command({ curl, "-L", "-k", "-s", url }, true, capture_stream()).bytes;
 }
 

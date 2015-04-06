@@ -52,7 +52,7 @@ namespace pt = boost::property_tree;
 
 #define ZIP_EXT ".zip"
 
-#define PRINT(x) cout << x << "\n"
+#define PRINT(x) {cout << x << "\n"; cout.flush();}
 #define SPACE() PRINT("")
 #define CATCH(expr, ex, msg) \
     try { expr; } catch (ex e) { PRINT(msg); exit(1); }
