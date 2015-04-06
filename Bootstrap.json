@@ -1,0 +1,55 @@
+{
+    "name": "Polygon4",
+    "bootstrap": {
+        "version": 1,
+        "url": "https://www.dropbox.com/s/0zhbgb1ftspcv9w/polygon4.zip?dl=1",
+        "updater": {
+            "version": 1,
+            "archive_name": "bootstrap.zip"
+        }
+    },
+    "git": {
+        "url": "https://github.com/aimrebirth/Polygon4.git",
+        "url_format": "https://github.com/aimrebirth/%1%/archive/master.zip",
+        "master_suffix": "-master"
+    },
+    "file_prefix": "Polygon4_",
+    "files": [
+        {
+            "name": "content.7z",
+            "url": "https://www.dropbox.com/s/e33b37pje827lcx/content.7z?dl=1",
+            "md5": "b5ec123b0ff58bba217a01fdda643abb",
+            "check_path": "Content"
+        },
+        {
+            "name": "project.7z",
+            "url": "https://www.dropbox.com/s/8laida8yzai6vyt/project.7z?dl=1",
+            "md5": "0bb9969e5f6bd175ce6396a4ce17fb1a",
+            "check_path": "Polygon4.uproject"
+        },
+        {
+            "name": "third_party.7z",
+            "url": "https://www.dropbox.com/s/n4gcapezsf7g4f7/third_party.7z?dl=1",
+            "md5": "4cb37171ec570905ab77d3a33c795a90",
+            "check_path": "ThirdParty/boost"
+        },
+        {
+            "name": "binaries.zip",
+            "url": "https://www.dropbox.com/s/gd9ahp1jtd5edfk/binaries.zip?dl=0",
+            "md5": "55366088e27dfdfae300edbfc6c34fa2",
+            "check_path": "Binaries"
+        }
+    ],
+    "sources": {
+        "repositories": [
+            {
+                "name": "Polygon4",
+                "unpack_dir": ""
+            },
+            {
+                "name": "Engine",
+                "unpack_dir": "ThirdParty"
+            }
+        ]
+    }
+}
