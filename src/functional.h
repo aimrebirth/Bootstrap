@@ -38,8 +38,9 @@ namespace pt = boost::property_tree;
 
 #define BOOTSTRAP_JSON_URL "https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/Bootstrap.json"
 
-#define BOOTSTRAPPER_VERSION        1
-#define BOOTSTRAP_UPDATER_VERSION   1
+#define BOOTSTRAPPER_VERSION            1
+#define BOOTSTRAPPER_RELEASE_VERSION    1
+#define BOOTSTRAP_UPDATER_VERSION       1
 
 #define POLYGON4_NAME "Polygon4"
 #define BOOTSTRAP_DOWNLOADS "BootstrapDownloads/"

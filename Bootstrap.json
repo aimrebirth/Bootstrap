@@ -18,28 +18,45 @@
         {
             "name": "content.7z",
             "url": "https://www.dropbox.com/s/e33b37pje827lcx/content.7z?dl=1",
-            "md5": "b5ec123b0ff58bba217a01fdda643abb",
+            "md5": "940161fbdc76ee7404bfc39be98aabcd",
             "check_path": "Content"
         },
         {
-            "name": "project.7z",
-            "url": "https://www.dropbox.com/s/8laida8yzai6vyt/project.7z?dl=1",
-            "md5": "0bb9969e5f6bd175ce6396a4ce17fb1a",
+            "name": "project.zip",
+            "url": "https://www.dropbox.com/s/xe5xpdsu3tewyxd/project.zip?dl=1",
+            "md5": "48f1bd749273f607765e110d3b5418e3",
             "check_path": "Polygon4.uproject"
         },
         {
-            "name": "third_party.7z",
-            "url": "https://www.dropbox.com/s/n4gcapezsf7g4f7/third_party.7z?dl=1",
-            "md5": "4cb37171ec570905ab77d3a33c795a90",
+            "name": "ThirdParty.7z",
+            "url": "https://www.dropbox.com/s/5s8tf9xxk3adv02/ThirdParty.7z?dl=1",
+            "md5": "d88b57071acfc95618749f5a64db7345",
             "check_path": "ThirdParty/boost"
         },
         {
             "name": "binaries.zip",
-            "url": "https://www.dropbox.com/s/gd9ahp1jtd5edfk/binaries.zip?dl=0",
-            "md5": "55366088e27dfdfae300edbfc6c34fa2",
+            "url": "https://www.dropbox.com/s/gd9ahp1jtd5edfk/binaries.zip?dl=1",
+            "md5": "d40b1143b3b1e68664dc438668a9073a",
             "check_path": "Binaries"
         }
     ],
+    "release": {
+        "file_prefix": "Release_Polygon4_",
+        "files": [
+            {
+                "name": "engine.zip",
+                "url": "https://www.dropbox.com/s/vaoh0fjxu2mg3s4/engine.zip?dl=1",
+                "md5": "0e317fd38b89d3281f9a9bb15aa97925",
+                "check_path": "Engine"
+            },
+            {
+                "name": "polygon4.zip",
+                "url": "https://www.dropbox.com/s/btzak9co3hukzq5/polygon4.zip?dl=1",
+                "md5": "5cc51fc479491fa7da4a347ef089aca3",
+                "check_path": "Polygon4"
+            }
+        ]
+    },
     "sources": {
         "repositories": [
             {

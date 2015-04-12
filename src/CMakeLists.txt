@@ -4,6 +4,10 @@
 
 include_directories(include)
 
+########################################
+# LIBRARY functional
+########################################
+
 set(functional_src
     functional.cpp
     functional.h
@@ -16,6 +20,11 @@ set(functional_src
 
 add_library             (functional ${functional_src})
 
+
+########################################
+# EXECUTABLE Bootstrap
+########################################
+
 set(bootstrap_src
     bootstrap.cpp
     functional.h
@@ -23,6 +32,24 @@ set(bootstrap_src
 
 add_executable          (Bootstrap ${bootstrap_src})
 target_link_libraries   (Bootstrap functional ${Boost_LIBRARIES})
+
+
+########################################
+# EXECUTABLE BootstrapRelease
+########################################
+
+set(bootstrap_src
+    bootstrap_release.cpp
+    functional.h
+)
+
+add_executable          (BootstrapRelease ${bootstrap_src})
+target_link_libraries   (BootstrapRelease functional ${Boost_LIBRARIES})
+
+
+########################################
+# EXECUTABLE BootstrapUpdater
+########################################
 
 set(updater_src
     updater.cpp

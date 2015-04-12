@@ -20,12 +20,12 @@
 
 int version()
 {
-    return BOOTSTRAPPER_VERSION;
+    return BOOTSTRAPPER_RELEASE_VERSION;
 }
 
 void print_version()
 {
-    PRINT("Polygon-4 Bootstrapper Version " << version());
+    PRINT("Polygon-4 Release Bootstrapper Version " << version());
     SPACE();
 }
 
@@ -43,7 +43,7 @@ void check_version(int ver)
 
 int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
 {
-    string polygon4 = data.get<string>("name") + "Developer";
+    string polygon4 = data.get<string>("name") + "Release";
     path base_dir = current_path();
     path polygon4_dir = base_dir / polygon4;
     path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
@@ -51,18 +51,9 @@ int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
     if (!exists(polygon4_dir))
         create_directory(polygon4_dir);
 
-    if (!git.empty())
-        git_checkout(polygon4_dir, data.get<string>("git.url"));
-    else
-        manual_download_sources(data);
-        
-    download_files(download_dir, polygon4, data.get_child("files"), data.get<string>("file_prefix"));
-    run_cmake(polygon4_dir);
-    build_engine(polygon4_dir);
-    create_project_files(polygon4_dir);
-    build_project(polygon4_dir);
+    download_files(download_dir, polygon4, data.get_child("release.files"), data.get<string>("release.file_prefix"));
 
-    PRINT("Bootstraped Polygon-4 successfully");
+    PRINT("Bootstraped Polygon-4 Release successfully");
 
     return 0;
 }
