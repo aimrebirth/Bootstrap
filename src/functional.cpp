@@ -67,6 +67,7 @@ void run_cmake(path dir)
 {
     auto third_party = dir / "ThirdParty";
     auto swig_dir = third_party / "swig";
+    auto swig_exe = swig_dir / "swig";
     auto boost_dir = third_party / "boost";
     auto boost_lib_dir = boost_dir / "lib64-msvc-12.0";
     auto src_dir = third_party / "Engine";
@@ -82,6 +83,7 @@ void run_cmake(path dir)
         "-DBOOST_ROOT=" + boost_dir.string(),
         "-DBOOST_LIBRARYDIR=" + boost_lib_dir.string(),
         "-DSWIG_DIR=" + swig_dir.string(),
+        "-DSWIG_EXECUTABLE=" + swig_exe.string(),
         "-G", "Visual Studio 12 Win64" });
     if (!exists(sln_file))
         check_return_code(1);
