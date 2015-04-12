@@ -41,7 +41,7 @@
         }
     ],
     "release": {
-        "file_prefix": "Release_Polygon4_",
+        "file_prefix": "Polygon4_Release_",
         "files": [
             {
                 "name": "engine.zip",
