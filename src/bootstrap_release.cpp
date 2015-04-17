@@ -20,7 +20,7 @@
 
 int version()
 {
-    return BOOTSTRAPPER_RELEASE_VERSION;
+    return BOOTSTRAPPER_VERSION;
 }
 
 void print_version()
@@ -43,15 +43,15 @@ void check_version(int ver)
 
 int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
 {
+    check_version(data.get<int>("bootstrap.version"));
+
     string polygon4 = data.get<string>("name") + "Release";
     path base_dir = current_path();
     path polygon4_dir = base_dir / polygon4;
     path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
-    if (!exists(polygon4_dir))
-        create_directory(polygon4_dir);
-
-    download_files(download_dir, polygon4, data.get_child("release.files"), data.get<string>("release.file_prefix"));
+    create_directory(polygon4_dir);
+    download_files(download_dir, polygon4, data.get_child("release"));
 
     PRINT("Bootstraped Polygon-4 Release successfully");
 

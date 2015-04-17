@@ -26,9 +26,9 @@
         ]
     },
     "release": {
-        "redirect": "release.json"
+        "redirect": "https://www.dropbox.com/s/znaojezh0q1evqx/release.json?dl=1"
     },
     "developer": {
-        "redirect": "developer.json"
+        "redirect": "https://www.dropbox.com/s/qmh4t89xdorgdo3/developer.json?dl=1"
     }
 }

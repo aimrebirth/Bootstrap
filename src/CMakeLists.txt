@@ -26,12 +26,12 @@ add_library             (functional ${functional_src})
 ########################################
 
 set(bootstrap_src
-    bootstrap.cpp
+    bootstrap_developer.cpp
     functional.h
 )
 
-add_executable          (Bootstrap ${bootstrap_src})
-target_link_libraries   (Bootstrap functional ${Boost_LIBRARIES})
+add_executable          (BootstrapDeveloper ${bootstrap_src})
+target_link_libraries   (BootstrapDeveloper functional ${Boost_LIBRARIES})
 
 
 ########################################

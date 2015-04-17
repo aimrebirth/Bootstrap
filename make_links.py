@@ -26,7 +26,7 @@ def main():
         except:
             has_old_json = False
         if has_old_json:
-            old_files = old_json[base_name]['files']
+            old_files = old_json['files']
             for f in old_files:
                 old_md5[f['check_path']] = f
 
@@ -42,7 +42,7 @@ def main():
             file = filename[filename.find(db_folder) + len(db_folder):]
 
             if has_old_json and file in old_md5.keys() and old_md5[file]['md5'] == file_md5:
-                print('file with the same md5 has already a link')
+                #print('file with the same md5 has already a link')
                 url = old_md5[file]['url']
             else:
                 f = client.share(filename, False)
@@ -61,7 +61,6 @@ def main():
             data.append(obj)
     json_data = dict()
     json_data['files'] = data
-    json_data['file_prefix'] = 'Polygon4_' + base_name
     json.dump(json_data, open(base_name + '.json', 'w'), indent = 2, sort_keys = True)
 
 def md5(file):

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <future>
 #include <iostream>
 #include <stdint.h>
 #include <string>
@@ -36,10 +37,11 @@ using namespace boost::filesystem;
 using namespace boost::process;
 namespace pt = boost::property_tree;
 
-#define BOOTSTRAP_JSON_URL "https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/Bootstrap.json"
+#define BOOTSTRAP_JSON_FILE "Bootstrap.json"
+#define BOOTSTRAP_JSON_DIR "https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
+#define BOOTSTRAP_JSON_URL BOOTSTRAP_JSON_DIR BOOTSTRAP_JSON_FILE
 
-#define BOOTSTRAPPER_VERSION            1
-#define BOOTSTRAPPER_RELEASE_VERSION    1
+#define BOOTSTRAPPER_VERSION            2
 #define BOOTSTRAP_UPDATER_VERSION       1
 
 #define POLYGON4_NAME "Polygon4"
@@ -92,9 +94,9 @@ int version();
 void print_version();
 
 // all other
-pt::ptree load_data();
+pt::ptree load_data(string url);
 Bytes download(string url);
-void download(string url, string file);
+void download(string url, string file, bool silent = false, bool curl_silent = false);
 void exit_program(int code);
 SubprocessAnswer execute_command(Strings args, bool exit_on_error = true, stream_behavior stdout_behavior = inherit_stream());
 void check_return_code(int code);
@@ -108,8 +110,9 @@ void update_sources();
 void manual_download_sources(const pt::ptree &data);
 void unpack(string file, string output_dir, bool exit_on_error = true);
 bool copy_dir(const path &source, const path &destination);
-void download_files(path dir, path output_dir, const pt::ptree &files, string file_prefix);
+void download_files(path dir, path output_dir, const pt::ptree &data);
 void run_cmake(path dir);
 void build_engine(path dir);
 void create_project_files(path dir);
 void build_project(path dir);
+Bytes read_file(string file);

@@ -90,14 +90,37 @@ void run_cmake(path dir)
     SPACE();
 }
 
-void download_files(path dir, path output_dir, const pt::ptree &files, string file_prefix)
+void download_files(path dir, path output_dir, const pt::ptree &data)
 {
+    string redirect = data.get("redirect", "");
+    if (!redirect.empty())
+    {
+        auto data2 = load_data(redirect);
+        download_files(dir, output_dir, data2);
+        return;
+    }
+
+    string file_prefix = data.get<string>("file_prefix");
+    const pt::ptree &files = data.get_child("files");
+    vector<future<void>> futures;
     for (auto &repo : files)
     {
         string url = repo.second.get<string>("url");
         string name = repo.second.get<string>("name", "");
         string file = (dir / file_prefix).string() + name;
         string hash = repo.second.get<string>("md5", "");
+        string check_path = repo.second.get("check_path", "");
+        bool packed = repo.second.get<bool>("packed", false);
+        if (!packed)
+        {
+            file = (output_dir / check_path).string();
+            if (!exists(file) || md5(file) != hash)
+            {
+                create_directories(path(file).parent_path());
+                futures.push_back(std::async([=](){ download(url, file, false, true); }));
+            }
+            continue;
+        }
         if (!exists(file) || md5(file) != hash)
         {
             download(url, file);
@@ -108,12 +131,13 @@ void download_files(path dir, path output_dir, const pt::ptree &files, string fi
             }
             unpack(file, output_dir.string());
         }
-        string check_path = repo.second.get("check_path", "");
         if (!check_path.empty() && !exists(output_dir / check_path))
         {
             unpack(file, output_dir.string());
         }
     }
+    for (auto &f : futures)
+        f.get();
 }
 
 void init()
@@ -257,15 +281,15 @@ bool has_program_in_path(string &prog)
     return ret;
 }
 
-pt::ptree load_data()
+pt::ptree load_data(string url)
 {
-    auto s = download(BOOTSTRAP_JSON_URL);
+    auto s = download(url);
     pt::ptree pt;
     stringstream ss(to_string(s));
     CATCH(
         pt::json_parser::read_json(ss, pt),
         pt::json_parser_error,
-        "Json file: " << BOOTSTRAP_JSON_URL << " has errors in its structure!" << "\n"
+        "Json file: " << url << " has errors in its structure!" << "\n"
         "Please, report to the author."
         );
     return pt;
@@ -274,20 +298,36 @@ pt::ptree load_data()
 Bytes download(string url)
 {
     PRINT("Downloading file: " << url);
-    return execute_command({ curl, "-L", "-k", "-s", url }, true, capture_stream()).bytes;
-    SPACE();
+    string file = (temp_directory_path() / "polygon4_bootstrap_temp_file").string();
+    download(url, file, true);
+    return read_file(file);
 }
 
-void download(string url, string file)
+Bytes read_file(string file)
+{
+    auto size = file_size(file);
+    FILE *f = fopen(file.c_str(), "rb");
+    if (!f)
+    {
+        PRINT("Cannot open file: " << file);
+        check_return_code(1);
+    }
+    Bytes bytes(size, 0);
+    fread(bytes.data(), 1, size, f);
+    fclose(f);
+    return bytes;
+}
+
+void download(string url, string file, bool silent, bool curl_silent)
 {
     if (file.empty())
     {
         PRINT("file is empty!");
         exit_program(1);
     }
-    PRINT("Downloading file: " << file);
-    execute_command({ curl, "-L", "-k", "-#", "-o" + file, url });
-    SPACE();
+    if (!silent)
+        PRINT("Downloading file: " << file);
+    execute_command({ curl, "-L", "-k", curl_silent ? "-s" : "-#", "-o" + file, url });
 }
 
 SubprocessAnswer execute_command(Strings args, bool exit_on_error, stream_behavior stdout_behavior)
@@ -296,7 +336,7 @@ SubprocessAnswer execute_command(Strings args, bool exit_on_error, stream_behavi
         args[0] += ".exe";
     boost::algorithm::replace_all(args[0], "/", "\\");
 
-    std::string exec = args[0];
+    std::string exec = absolute(args[0]).string();
 
     context ctx;
     ctx.stdout_behavior = stdout_behavior;
@@ -306,7 +346,7 @@ SubprocessAnswer execute_command(Strings args, bool exit_on_error, stream_behavi
 
     try
     {
-        child c = launch(exec, args, ctx);
+        child c = boost::process::launch(exec, args, ctx);
         int ret = c.wait().exit_status();
         if (ret && exit_on_error)
             check_return_code(ret);
@@ -391,7 +431,7 @@ try
     init();
     print_version();
 
-    auto data = load_data();
+    auto data = load_data(BOOTSTRAP_JSON_URL);
 
     bootstrap_module_main(argc, argv, data);
 
