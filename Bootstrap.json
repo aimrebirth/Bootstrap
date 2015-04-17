@@ -26,9 +26,9 @@
         ]
     },
     "release": {
-        "redirect": "developer.json"
+        "redirect": "release.json"
     },
     "developer": {
-        "redirect": "release.json"
+        "redirect": "developer.json"
     }
 }
