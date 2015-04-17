@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <future>
 #include <iostream>
 #include <stdint.h>
 #include <string>

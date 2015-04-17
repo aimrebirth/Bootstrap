@@ -53,8 +53,14 @@ int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
     if (exists(file))
         copy_file(file, bak, copy_option::overwrite_if_exists);
 
+    // remove old files
+    remove("Bootstrap.exe");
+    remove("BootstrapLog.ps1");
+    remove("Bootstrap.log");
+
     string bootstrapper_new = BOOTSTRAP_DOWNLOADS "bootstrapper.new";
     download(data.get<string>("bootstrap.url"), file);
+    remove_all(bootstrapper_new);
     unpack(file, bootstrapper_new, false);
     copy_dir(bootstrapper_new, ".");
 

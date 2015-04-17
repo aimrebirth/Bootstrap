@@ -16,7 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/asio/io_service.hpp>
+
 #include "functional.h"
+
+#include <boost/thread.hpp>
 
 //
 // global data
@@ -100,9 +104,15 @@ void download_files(path dir, path output_dir, const pt::ptree &data)
         return;
     }
 
-    string file_prefix = data.get<string>("file_prefix");
+    // parallel curl in case of noncompressed files
+    boost::asio::io_service io_service;
+    boost::thread_group threadpool;
+    boost::asio::io_service::work work(io_service);
+    for (int i = 0; i < 10; i++)
+        threadpool.create_thread(boost::bind(&boost::asio::io_service::run, &io_service));
+
+    string file_prefix = data.get("file_prefix", "");
     const pt::ptree &files = data.get_child("files");
-    vector<future<void>> futures;
     for (auto &repo : files)
     {
         string url = repo.second.get<string>("url");
@@ -117,7 +127,7 @@ void download_files(path dir, path output_dir, const pt::ptree &data)
             if (!exists(file) || md5(file) != hash)
             {
                 create_directories(path(file).parent_path());
-                futures.push_back(std::async([=](){ download(url, file, false, true); }));
+                io_service.post([file, url](){ download(url, file, false, true); });
             }
             continue;
         }
@@ -136,8 +146,8 @@ void download_files(path dir, path output_dir, const pt::ptree &data)
             unpack(file, output_dir.string());
         }
     }
-    for (auto &f : futures)
-        f.get();
+    io_service.stop();
+    threadpool.join_all();
 }
 
 void init()

@@ -25,7 +25,7 @@ int version()
 
 void print_version()
 {
-    PRINT("Polygon-4 Bootstrapper Version " << version());
+    PRINT("Polygon-4 Developer Bootstrapper Version " << version());
     SPACE();
 }
 
