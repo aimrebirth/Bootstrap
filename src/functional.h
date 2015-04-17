@@ -74,6 +74,14 @@ struct SubprocessAnswer
     Bytes bytes;
 };
 
+enum DownloadFlags
+{
+    D_DEFAULT           =   0x0,
+    D_SILENT            =   0x1,
+    D_CURL_SILENT       =   0x2,
+    D_NO_SPACE          =   0x4
+};
+
 //
 // global data
 //
@@ -95,7 +103,7 @@ void print_version();
 // all other
 pt::ptree load_data(string url);
 Bytes download(string url);
-void download(string url, string file, bool silent = false, bool curl_silent = false);
+void download(string url, string file, int flags = D_DEFAULT);
 void exit_program(int code);
 SubprocessAnswer execute_command(Strings args, bool exit_on_error = true, stream_behavior stdout_behavior = inherit_stream());
 void check_return_code(int code);

@@ -127,7 +127,11 @@ void download_files(path dir, path output_dir, const pt::ptree &data)
             if (!exists(file) || md5(file) != hash)
             {
                 create_directories(path(file).parent_path());
-                io_service.post([file, url](){ download(url, file, false, true); });
+                // create empty files
+                ofstream ofile(file);
+                if (ofile)
+                    ofile.close();
+                io_service.post([file, url](){ download(url, file, D_NO_SPACE); });
             }
             continue;
         }
@@ -309,7 +313,7 @@ Bytes download(string url)
 {
     PRINT("Downloading file: " << url);
     string file = (temp_directory_path() / "polygon4_bootstrap_temp_file").string();
-    download(url, file, true);
+    download(url, file, D_SILENT);
     return read_file(file);
 }
 
@@ -328,16 +332,18 @@ Bytes read_file(string file)
     return bytes;
 }
 
-void download(string url, string file, bool silent, bool curl_silent)
+void download(string url, string file, int flags)
 {
     if (file.empty())
     {
         PRINT("file is empty!");
         exit_program(1);
     }
-    if (!silent)
+    if (!(flags & D_SILENT))
         PRINT("Downloading file: " << file);
-    execute_command({ curl, "-L", "-k", curl_silent ? "-s" : "-#", "-o" + file, url });
+    execute_command({ curl, "-L", "-k", (flags & D_CURL_SILENT) ? "-s" : "-#", "-o" + file, url });
+    if (!(flags & D_NO_SPACE))
+        SPACE();
 }
 
 SubprocessAnswer execute_command(Strings args, bool exit_on_error, stream_behavior stdout_behavior)
