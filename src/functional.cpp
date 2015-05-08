@@ -239,8 +239,7 @@ void manual_download_sources(const pt::ptree &data)
 
 void download_submodules()
 {
-    execute_command({git, "submodule", "init"});
-    execute_command({git, "submodule", "update"});
+    execute_command({git, "submodule", "update", "--init", "--recursive"});
 }
 
 void download_sources(string url)
