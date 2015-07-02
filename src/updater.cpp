@@ -20,6 +20,8 @@
 
 #include <process.h>
 
+wstring bootstrap_programs_prefix;
+
 int version()
 {
     return BOOTSTRAP_UPDATER_VERSION;
@@ -45,6 +47,7 @@ void check_version(int ver)
 
 int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
 {
+    init();
     check_version(data.get<int>(L"bootstrap.updater.version"));
 
     auto bootstrap_zip = data.get<wstring>(L"bootstrap.updater.archive_name");

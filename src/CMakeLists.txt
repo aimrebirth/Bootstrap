@@ -59,4 +59,18 @@ set(updater_src
 add_executable          (BootstrapUpdater ${updater_src})
 target_link_libraries   (BootstrapUpdater functional ${Boost_LIBRARIES})
 
+
+########################################
+# EXECUTABLE RemoveUntrackedContent
+########################################
+
+set(remove_u_c_src
+    remove_untracked_content.cpp
+    functional.h
+)
+
+add_executable          (RemoveUntrackedContent ${remove_u_c_src})
+target_link_libraries   (RemoveUntrackedContent functional ${Boost_LIBRARIES})
+target_compile_definitions(RemoveUntrackedContent PUBLIC -DBOOTSTRAP_PREFIX=L"../")
+
 ################################################################################

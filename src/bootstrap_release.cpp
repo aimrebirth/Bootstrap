@@ -18,6 +18,8 @@
 
 #include "functional.h"
 
+wstring bootstrap_programs_prefix;
+
 int version()
 {
     return BOOTSTRAPPER_VERSION;
@@ -43,6 +45,7 @@ void check_version(int ver)
 
 int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
 {
+    init();
     check_version(data.get<int>(L"bootstrap.version"));
 
     auto polygon4 = data.get<wstring>(L"name") + L"Release";

@@ -29,6 +29,8 @@
 // global data
 //
 
+extern wstring bootstrap_programs_prefix;
+
 wstring git = L"git";
 wstring cmake = L"cmake";
 wstring msbuild = L"C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\MSBuild.exe";
@@ -60,7 +62,7 @@ void create_project_files(wpath dir)
     if (/*!exists(sln) && */exists(uproject))
     {
         PRINT("Creating project files");
-        execute_command({ uvc, L"/projectfiles", uproject.wstring() });
+        execute_command({ bootstrap_programs_prefix + uvs, L"/projectfiles", uproject.wstring() });
         SPACE();
     }
 }
@@ -185,7 +187,7 @@ void init()
 void unpack(wstring file, wstring output_dir, bool exit_on_error)
 {
     PRINT("Unpacking file: " << file);
-    execute_command({_7z, L"x", L"-y", L"-o" + output_dir, file}, exit_on_error);
+    execute_command({ bootstrap_programs_prefix + _7z, L"x", L"-y", L"-o" + output_dir, file}, exit_on_error);
     SPACE();
 }
 
@@ -196,7 +198,7 @@ bool copy_dir(const wpath &source, const wpath &destination)
     {
         if (!fs::exists(source) || !fs::is_directory(source))
         {
-            std::cerr << "Source directory " << source.wstring()
+            std::cerr << "Source directory " << source.string()
                 << " does not exist or is not a directory." << '\n';
             return false;
         }
@@ -359,7 +361,7 @@ void download(wstring url, wstring file, int flags)
     }
     if (!(flags & D_SILENT))
         PRINT("Downloading file: " << file);
-    execute_command({ curl, L"-L", L"-k", (flags & D_CURL_SILENT) ? L"-s" : L"-#", L"-o" + file, url });
+    execute_command({ bootstrap_programs_prefix + curl, L"-L", L"-k", (flags & D_CURL_SILENT) ? L"-s" : L"-#", L"-o" + file, url });
     if (!(flags & D_NO_SPACE))
         SPACE();
 }
@@ -466,7 +468,6 @@ try
         }
     }
 
-    init();
     print_version();
 
     auto data = load_data(BOOTSTRAP_JSON_URL);

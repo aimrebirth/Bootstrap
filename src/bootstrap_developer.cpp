@@ -18,6 +18,8 @@
 
 #include "functional.h"
 
+wstring bootstrap_programs_prefix;
+
 int version()
 {
     return BOOTSTRAPPER_VERSION;
@@ -43,12 +45,13 @@ void check_version(int ver)
 
 int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
 {
+    init();
     check_version(data.get<int>(L"bootstrap.version"));
 
     auto polygon4 = data.get<wstring>(L"name") + L"Developer";
-    path base_dir = current_path();
-    path polygon4_dir = base_dir / polygon4;
-    path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
+    wpath base_dir = current_path();
+    wpath polygon4_dir = base_dir / polygon4;
+    wpath download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
     create_directory(polygon4_dir);
 

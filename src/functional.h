@@ -40,8 +40,9 @@ namespace pt = boost::property_tree;
 #define BOOTSTRAP_JSON_DIR L"https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
 #define BOOTSTRAP_JSON_URL BOOTSTRAP_JSON_DIR BOOTSTRAP_JSON_FILE
 
-#define BOOTSTRAPPER_VERSION            2
-#define BOOTSTRAP_UPDATER_VERSION       1
+#define BOOTSTRAPPER_VERSION                2
+#define BOOTSTRAP_UPDATER_VERSION           1
+#define UNTRACKED_CONTENT_DELETER_VERSION   1
 
 #define POLYGON4_NAME L"Polygon4"
 #define BOOTSTRAP_DOWNLOADS L"BootstrapDownloads/"
@@ -49,7 +50,7 @@ namespace pt = boost::property_tree;
 #define BOOTSTRAP_COPY_UPDATER L"CopyUpdater"
 
 #define _7z BOOTSTRAP_PROGRAMS L"7za"
-#define uvc BOOTSTRAP_PROGRAMS L"UnrealVersionSelector"
+#define uvs BOOTSTRAP_PROGRAMS L"UnrealVersionSelector"
 #define curl BOOTSTRAP_PROGRAMS L"curl"
 
 #define ZIP_EXT L".zip"
