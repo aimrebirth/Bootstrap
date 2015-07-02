@@ -36,23 +36,23 @@ using namespace boost::filesystem;
 using namespace boost::process;
 namespace pt = boost::property_tree;
 
-#define BOOTSTRAP_JSON_FILE "Bootstrap.json"
-#define BOOTSTRAP_JSON_DIR "https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
+#define BOOTSTRAP_JSON_FILE L"Bootstrap.json"
+#define BOOTSTRAP_JSON_DIR L"https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
 #define BOOTSTRAP_JSON_URL BOOTSTRAP_JSON_DIR BOOTSTRAP_JSON_FILE
 
 #define BOOTSTRAPPER_VERSION            2
 #define BOOTSTRAP_UPDATER_VERSION       1
 
-#define POLYGON4_NAME "Polygon4"
-#define BOOTSTRAP_DOWNLOADS "BootstrapDownloads/"
-#define BOOTSTRAP_PROGRAMS "BootstrapPrograms/"
-#define BOOTSTRAP_COPY_UPDATER "CopyUpdater"
+#define POLYGON4_NAME L"Polygon4"
+#define BOOTSTRAP_DOWNLOADS L"BootstrapDownloads/"
+#define BOOTSTRAP_PROGRAMS L"BootstrapPrograms/"
+#define BOOTSTRAP_COPY_UPDATER L"CopyUpdater"
 
-#define _7z BOOTSTRAP_PROGRAMS "7za"
-#define uvc BOOTSTRAP_PROGRAMS "UnrealVersionSelector"
-#define curl BOOTSTRAP_PROGRAMS "curl"
+#define _7z BOOTSTRAP_PROGRAMS L"7za"
+#define uvc BOOTSTRAP_PROGRAMS L"UnrealVersionSelector"
+#define curl BOOTSTRAP_PROGRAMS L"curl"
 
-#define ZIP_EXT ".zip"
+#define ZIP_EXT L".zip"
 
 #define PRINT(x) {cerr << x << "\n"; cerr.flush();}
 #define SPACE() PRINT("")
@@ -64,6 +64,7 @@ namespace pt = boost::property_tree;
 //
 
 typedef vector<string> Strings;
+typedef vector<wstring> WStrings;
 
 typedef uint8_t Byte;
 typedef vector<Byte> Bytes;
@@ -86,40 +87,44 @@ enum DownloadFlags
 // global data
 //
 
-extern string git;
-extern string cmake;
-extern string msbuild;
+extern wstring git;
+extern wstring cmake;
+extern wstring msbuild;
 
 //
 // function declarations
 //
 
+// helpers
+std::string to_string(std::wstring s);
+std::wstring to_wstring(std::string s);
+
 // main
-int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data);
+int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data);
 void init();
 int version();
 void print_version();
 
 // all other
-pt::ptree load_data(string url);
-Bytes download(string url);
-void download(string url, string file, int flags = D_DEFAULT);
+pt::wptree load_data(wstring url);
+Bytes download(wstring url);
+void download(wstring url, wstring file, int flags = D_DEFAULT);
 void exit_program(int code);
-SubprocessAnswer execute_command(Strings args, bool exit_on_error = true, stream_behavior stdout_behavior = inherit_stream());
+SubprocessAnswer execute_command(WStrings args, bool exit_on_error = true, stream_behavior stdout_behavior = inherit_stream());
 void check_return_code(int code);
-string to_string(const Bytes &b);
+wstring to_string(const Bytes &b);
 void check_version(int version);
-bool has_program_in_path(string &prog);
-void git_checkout(path dir, string url);
-void download_sources(string url);
+bool has_program_in_path(wstring &prog);
+void git_checkout(wpath dir, wstring url);
+void download_sources(wstring url);
 void download_submodules();
 void update_sources();
-void manual_download_sources(const pt::ptree &data);
-void unpack(string file, string output_dir, bool exit_on_error = true);
-bool copy_dir(const path &source, const path &destination);
-void download_files(path dir, path output_dir, const pt::ptree &data);
-void run_cmake(path dir);
-void build_engine(path dir);
-void create_project_files(path dir);
-void build_project(path dir);
-Bytes read_file(string file);
+void manual_download_sources(const pt::wptree &data);
+void unpack(wstring file, wstring output_dir, bool exit_on_error = true);
+bool copy_dir(const wpath &source, const wpath &destination);
+void download_files(wpath dir, wpath output_dir, const pt::wptree &data);
+void run_cmake(wpath dir);
+void build_engine(wpath dir);
+void create_project_files(wpath dir);
+void build_project(wpath dir);
+Bytes read_file(wstring file);

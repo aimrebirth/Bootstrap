@@ -43,13 +43,13 @@ void check_version(int ver)
     exit_program(1);
 }
 
-int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
+int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
 {
-    check_version(data.get<int>("bootstrap.updater.version"));
+    check_version(data.get<int>(L"bootstrap.updater.version"));
 
-    string bootstrap_zip = data.get<string>("bootstrap.updater.archive_name");
-    string file = BOOTSTRAP_DOWNLOADS + bootstrap_zip;
-    string bak = file + ".bak";
+    auto bootstrap_zip = data.get<wstring>(L"bootstrap.updater.archive_name");
+    auto file = BOOTSTRAP_DOWNLOADS + bootstrap_zip;
+    auto bak = file + L".bak";
     if (exists(file))
         copy_file(file, bak, copy_option::overwrite_if_exists);
 
@@ -58,18 +58,18 @@ int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
     remove("BootstrapLog.ps1");
     remove("Bootstrap.log");
 
-    string bootstrapper_new = BOOTSTRAP_DOWNLOADS "bootstrapper.new";
-    download(data.get<string>("bootstrap.url"), file);
+    auto bootstrapper_new = BOOTSTRAP_DOWNLOADS L"bootstrapper.new";
+    download(data.get<wstring>(L"bootstrap.url"), file);
     remove_all(bootstrapper_new);
     unpack(file, bootstrapper_new, false);
     copy_dir(bootstrapper_new, ".");
 
     // self update
-    path updater = bootstrapper_new / path(argv[0]).filename();
-    string exe = absolute(updater).normalize().string();
-    string arg0 = "\"" + exe + "\"";
-    string dst = "\"" + string(argv[0]) + "\"";
-    if (_execl(exe.c_str(), arg0.c_str(), "--copy", dst.c_str(), 0) == -1)
+    wpath updater = bootstrapper_new / path(argv[0]).filename();
+    auto exe = absolute(updater).normalize().wstring();
+    auto arg0 = L"\"" + exe + L"\"";
+    auto dst = L"\"" + to_wstring(argv[0]) + L"\"";
+    if (_wexecl(exe.c_str(), arg0.c_str(), L"--copy", dst.c_str(), 0) == -1)
     {
         PRINT("FATAL ERROR: errno = " << errno);
         PRINT("Cannot update myself. Close the program and replace this file with newer BootstrapUpdater.");

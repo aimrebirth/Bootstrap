@@ -41,17 +41,17 @@ void check_version(int ver)
     exit_program(1);
 }
 
-int bootstrap_module_main(int argc, char *argv[], const pt::ptree &data)
+int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
 {
-    check_version(data.get<int>("bootstrap.version"));
+    check_version(data.get<int>(L"bootstrap.version"));
 
-    string polygon4 = data.get<string>("name") + "Release";
-    path base_dir = current_path();
-    path polygon4_dir = base_dir / polygon4;
-    path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
+    auto polygon4 = data.get<wstring>(L"name") + L"Release";
+    wpath base_dir = current_path();
+    wpath polygon4_dir = base_dir / polygon4;
+    wpath download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
     create_directory(polygon4_dir);
-    download_files(download_dir, polygon4, data.get_child("release"));
+    download_files(download_dir, polygon4, data.get_child(L"release"));
 
     PRINT("Bootstraped Polygon-4 Release successfully");
 

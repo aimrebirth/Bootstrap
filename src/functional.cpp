@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <codecvt>
+#include <locale>
+
 #include <boost/asio/io_service.hpp>
 
 #include "functional.h"
@@ -26,36 +29,52 @@
 // global data
 //
 
-string git = "git";
-string cmake = "cmake";
-string msbuild = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\MSBuild.exe";
+wstring git = L"git";
+wstring cmake = L"cmake";
+wstring msbuild = L"C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\MSBuild.exe";
+
+//
+// helper functions
+//
+
+std::string to_string(std::wstring s)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.to_bytes(s.c_str());
+}
+
+std::wstring to_wstring(std::string s)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.from_bytes(s.c_str());
+}
 
 //
 // function definitions
 //
 
-void create_project_files(path dir)
+void create_project_files(wpath dir)
 {
     auto sln = dir / "Polygon4.sln";
     auto uproject = dir / "Polygon4.uproject";
-    if (!exists(sln) && exists(uproject))
+    if (/*!exists(sln) && */exists(uproject))
     {
         PRINT("Creating project files");
-        execute_command({ uvc, "/projectfiles", uproject.string() });
+        execute_command({ uvc, L"/projectfiles", uproject.wstring() });
         SPACE();
     }
 }
 
-void build_project(path dir)
+void build_project(wpath dir)
 {
     auto sln = dir / "Polygon4.sln";
     PRINT("Building Polygon4 Unreal project");
     SPACE();
-    execute_command({ msbuild, sln.string(), "/property:Configuration=Development Editor", "/property:Platform=Windows", "/m" });
+    execute_command({ msbuild, sln.wstring(), L"/p:Configuration=Development Editor", L"/p:Platform=Win64", L"/m" });
     SPACE();
 }
 
-void build_engine(path dir)
+void build_engine(wpath dir)
 {
     auto bin_dir = dir / "ThirdParty" / "Engine" / "Win64";
     auto sln_file = bin_dir / "Engine.sln";
@@ -63,11 +82,11 @@ void build_engine(path dir)
         return;
     PRINT("Building Engine");
     SPACE();
-    execute_command({ cmake, "--build", bin_dir.string(), "--config", "RelWithDebInfo" });
+    execute_command({ cmake, L"--build", bin_dir.wstring(), L"--config", L"RelWithDebInfo" });
     SPACE();
 }
 
-void run_cmake(path dir)
+void run_cmake(wpath dir)
 {
     auto third_party = dir / "ThirdParty";
     auto swig_dir = third_party / "swig";
@@ -82,21 +101,21 @@ void run_cmake(path dir)
     if (cmake.empty())
         return;
     PRINT("Running CMake");
-    execute_command({ cmake, "-H" + src_dir.string(),
-        "-B" + bin_dir.string(),
-        "-DBOOST_ROOT=" + boost_dir.string(),
-        "-DBOOST_LIBRARYDIR=" + boost_lib_dir.string(),
-        "-DSWIG_DIR=" + swig_dir.string(),
-        "-DSWIG_EXECUTABLE=" + swig_exe.string(),
-        "-G", "Visual Studio 12 Win64" });
+    execute_command({ cmake, L"-H" + src_dir.wstring(),
+        L"-B" + bin_dir.wstring(),
+        L"-DBOOST_ROOT=" + boost_dir.wstring(),
+        L"-DBOOST_LIBRARYDIR=" + boost_lib_dir.wstring(),
+        L"-DSWIG_DIR=" + swig_dir.wstring(),
+        L"-DSWIG_EXECUTABLE=" + swig_exe.wstring(),
+        L"-G", L"Visual Studio 12 Win64" });
     if (!exists(sln_file))
         check_return_code(1);
     SPACE();
 }
 
-void download_files(path dir, path output_dir, const pt::ptree &data)
+void download_files(wpath dir, wpath output_dir, const pt::wptree &data)
 {
-    string redirect = data.get("redirect", "");
+    wstring redirect = data.get(L"redirect", L"");
     if (!redirect.empty())
     {
         auto data2 = load_data(redirect);
@@ -111,22 +130,22 @@ void download_files(path dir, path output_dir, const pt::ptree &data)
     for (int i = 0; i < 10; i++)
         threadpool.create_thread(boost::bind(&boost::asio::io_service::run, &io_service));
 
-    string file_prefix = data.get("file_prefix", "");
-    const pt::ptree &files = data.get_child("files");
+    wstring file_prefix = data.get(L"file_prefix", L"");
+    const pt::wptree &files = data.get_child(L"files");
     for (auto &repo : files)
     {
-        string url = repo.second.get<string>("url");
-        string name = repo.second.get<string>("name", "");
-        string file = (dir / file_prefix).string() + name;
-        string hash = repo.second.get<string>("md5", "");
-        string check_path = repo.second.get("check_path", "");
-        bool packed = repo.second.get<bool>("packed", false);
+        auto url = repo.second.get<wstring>(L"url");
+        auto name = repo.second.get<wstring>(L"name", L"");
+        auto file = (dir / file_prefix).wstring() + name;
+        auto hash = repo.second.get<wstring>(L"md5", L"");
+        auto check_path = repo.second.get(L"check_path", L"");
+        bool packed = repo.second.get<bool>(L"packed", false);
         if (!packed)
         {
-            file = (output_dir / check_path).string();
+            file = (output_dir / check_path).wstring();
             if (!exists(file) || md5(file) != hash)
             {
-                create_directories(path(file).parent_path());
+                create_directories(wpath(file).parent_path());
                 // create empty files
                 ofstream ofile(file);
                 if (ofile)
@@ -143,11 +162,11 @@ void download_files(path dir, path output_dir, const pt::ptree &data)
                 PRINT("Wrong file is located on server! Cannot proceed.");
                 exit_program(1);
             }
-            unpack(file, output_dir.string());
+            unpack(file, output_dir.wstring());
         }
         if (!check_path.empty() && !exists(output_dir / check_path))
         {
-            unpack(file, output_dir.string());
+            unpack(file, output_dir.wstring());
         }
     }
     io_service.stop();
@@ -163,21 +182,21 @@ void init()
     has_program_in_path(cmake);
 }
 
-void unpack(string file, string output_dir, bool exit_on_error)
+void unpack(wstring file, wstring output_dir, bool exit_on_error)
 {
     PRINT("Unpacking file: " << file);
-    execute_command({_7z, "x", "-y", "-o" + output_dir, file}, exit_on_error);
+    execute_command({_7z, L"x", L"-y", L"-o" + output_dir, file}, exit_on_error);
     SPACE();
 }
 
-bool copy_dir(const path &source, const path &destination)
+bool copy_dir(const wpath &source, const wpath &destination)
 {
     namespace fs = boost::filesystem;
     try
     {
         if (!fs::exists(source) || !fs::is_directory(source))
         {
-            std::cerr << "Source directory " << source.string()
+            std::cerr << "Source directory " << source.wstring()
                 << " does not exist or is not a directory." << '\n';
             return false;
         }
@@ -192,7 +211,7 @@ bool copy_dir(const path &source, const path &destination)
     {
         try
         {
-            fs::path current(file->path());
+            fs::wpath current(file->path());
             if (fs::is_directory(current))
             {
                 if (!copy_dir( current, destination / current.filename()))
@@ -211,47 +230,47 @@ bool copy_dir(const path &source, const path &destination)
     return true;
 }
 
-void manual_download_sources(const pt::ptree &data)
+void manual_download_sources(const pt::wptree &data)
 {
-    string format = data.get<string>("git.url_format");
-    string master_suffix = data.get<string>("git.master_suffix");
-    for (auto &repo : data.get_child("sources.repositories"))
+    auto format = data.get<wstring>(L"git.url_format");
+    auto master_suffix = data.get<wstring>(L"git.master_suffix");
+    for (auto &repo : data.get_child(L"sources.repositories"))
     {
-        string name = repo.second.get<string>("name");
-        string url = (boost::format(format.c_str()) % name).str();
-        string file = BOOTSTRAP_DOWNLOADS + name + master_suffix + ZIP_EXT;
+        auto name = repo.second.get<wstring>(L"name");
+        auto url = (boost::wformat(format.c_str()) % name).str();
+        auto file = BOOTSTRAP_DOWNLOADS + name + master_suffix + ZIP_EXT;
         download(url, file);
     }
-    for (auto &repo : data.get_child("sources.repositories"))
+    for (auto &repo : data.get_child(L"sources.repositories"))
     {
-        string name = repo.second.get<string>("name");
-        string dir = BOOTSTRAP_DOWNLOADS + name + master_suffix;
-        string file = dir + ZIP_EXT;
+        auto name = repo.second.get<wstring>(L"name");
+        auto dir = BOOTSTRAP_DOWNLOADS + name + master_suffix;
+        auto file = dir + ZIP_EXT;
         unpack(file, BOOTSTRAP_DOWNLOADS);
 
-        string src = dir;
-        string dst = data.get<string>("name");
+        auto src = dir;
+        auto dst = data.get<wstring>(L"name");
         if (name != dst)
-            dst += "/" + repo.second.get<string>("unpack_dir") + "/" + name;
+            dst += L"/" + repo.second.get<wstring>(L"unpack_dir") + L"/" + name;
         copy_dir(src, dst);
     }
 }
 
 void download_submodules()
 {
-    execute_command({git, "submodule", "update", "--init", "--recursive"});
+    execute_command({git, L"submodule", L"update", L"--init", L"--recursive"});
 }
 
-void download_sources(string url)
+void download_sources(wstring url)
 {
     PRINT("Downloading latest sources from Github repositories");
-    execute_command({git, "clone", url, "."});
+    execute_command({git, L"clone", url, L"."});
     if (!exists(".git"))
     {
-        execute_command({git, "init"});
-        execute_command({git, "remote", "add", "origin", url});
-        execute_command({git, "fetch"});
-        execute_command({git, "reset", "origin/master", "--hard"});
+        execute_command({git, L"init"});
+        execute_command({git, L"remote", L"add", L"origin", url});
+        execute_command({git, L"fetch"});
+        execute_command({git, L"reset", L"origin/master", L"--hard"});
     }
     download_submodules();
     SPACE();
@@ -260,12 +279,12 @@ void download_sources(string url)
 void update_sources()
 {
     PRINT("Updating latest sources from Github repositories");
-    execute_command({git, "pull", "origin", "master"});
+    execute_command({git, L"pull", L"origin", L"master"});
     download_submodules();
     SPACE();
 }
 
-void git_checkout(path dir, string url)
+void git_checkout(wpath dir, wstring url)
 {
     auto old_path = current_path();
     current_path(dir);
@@ -278,27 +297,27 @@ void git_checkout(path dir, string url)
     current_path(old_path);
 }
 
-bool has_program_in_path(string &prog)
+bool has_program_in_path(wstring &prog)
 {
     bool ret = true;
     try
     {
-        prog = find_executable_in_path(prog);
+        prog = to_wstring(find_executable_in_path(to_string(prog)));
     }
     catch (filesystem_error)
     {
-        PRINT("Warning: \"" << prog << "\" is missing in your PATH environment variable");
+        PRINT("Warning: \"" << prog << "\" is missing in your wpath environment variable");
         SPACE();
         ret = false;
     }
     return ret;
 }
 
-pt::ptree load_data(string url)
+pt::wptree load_data(wstring url)
 {
     auto s = download(url);
-    pt::ptree pt;
-    stringstream ss(to_string(s));
+    pt::wptree pt;
+    wstringstream ss(to_string(s));
     CATCH(
         pt::json_parser::read_json(ss, pt),
         pt::json_parser_error,
@@ -308,18 +327,18 @@ pt::ptree load_data(string url)
     return pt;
 }
 
-Bytes download(string url)
+Bytes download(wstring url)
 {
     PRINT("Downloading file: " << url);
-    string file = (temp_directory_path() / "polygon4_bootstrap_temp_file").string();
+    wstring file = (temp_directory_path() / "polygon4_bootstrap_temp_file").wstring();
     download(url, file, D_SILENT);
     return read_file(file);
 }
 
-Bytes read_file(string file)
+Bytes read_file(wstring file)
 {
     auto size = file_size(file);
-    FILE *f = fopen(file.c_str(), "rb");
+    FILE *f = fopen(to_string(file).c_str(), "rb");
     if (!f)
     {
         PRINT("Cannot open file: " << file);
@@ -331,7 +350,7 @@ Bytes read_file(string file)
     return bytes;
 }
 
-void download(string url, string file, int flags)
+void download(wstring url, wstring file, int flags)
 {
     if (file.empty())
     {
@@ -340,18 +359,22 @@ void download(string url, string file, int flags)
     }
     if (!(flags & D_SILENT))
         PRINT("Downloading file: " << file);
-    execute_command({ curl, "-L", "-k", (flags & D_CURL_SILENT) ? "-s" : "-#", "-o" + file, url });
+    execute_command({ curl, L"-L", L"-k", (flags & D_CURL_SILENT) ? L"-s" : L"-#", L"-o" + file, url });
     if (!(flags & D_NO_SPACE))
         SPACE();
 }
 
-SubprocessAnswer execute_command(Strings args, bool exit_on_error, stream_behavior stdout_behavior)
+SubprocessAnswer execute_command(WStrings args, bool exit_on_error, stream_behavior stdout_behavior)
 {
-    if (args[0].rfind(".exe") != args[0].size() - 4)
-        args[0] += ".exe";
+    if (args[0].rfind(L".exe") != args[0].size() - 4)
+        args[0] += L".exe";
     boost::algorithm::replace_all(args[0], "/", "\\");
 
-    std::string exec = absolute(args[0]).string();
+    std::wstring exec = absolute(args[0]).wstring();
+
+    Strings args_s;
+    for (auto &a : args)
+        args_s.push_back(to_string(a));
 
     context ctx;
     ctx.stdout_behavior = stdout_behavior;
@@ -361,7 +384,7 @@ SubprocessAnswer execute_command(Strings args, bool exit_on_error, stream_behavi
 
     try
     {
-        child c = boost::process::launch(exec, args, ctx);
+        child c = boost::process::launch(to_string(exec), args_s, ctx);
         int ret = c.wait().exit_status();
         if (ret && exit_on_error)
             check_return_code(ret);
@@ -407,9 +430,9 @@ void exit_program(int code)
     exit(1);
 }
 
-string to_string(const Bytes &b)
+wstring to_string(const Bytes &b)
 {
-    return string(b.begin(), b.end());
+    return wstring(b.begin(), b.end());
 }
 
 int main(int argc, char *argv[])
