@@ -8,11 +8,22 @@
             "archive_name": "bootstrap.zip"
         }
     },
-    "git": {
-        "url": "https://github.com/aimrebirth/Polygon4.git",
-        "url_format": "https://github.com/aimrebirth/%1%/archive/master.zip",
-        "master_suffix": "-master"
-    },
+    "git": [
+        {
+            "name": "Polygon4",
+            "url": "https://github.com/aimrebirth/Polygon4.git",
+            "url_format": "https://github.com/aimrebirth/Polygon4/archive/master.zip",
+            "master_suffix": "-master",
+            "dir": "."
+        },
+        {
+            "name": "DatabaseManager",
+            "url": "https://github.com/aimrebirth/DatabaseManager.git",
+            "url_format": "https://github.com/aimrebirth/DatabaseManager/archive/master.zip",
+            "master_suffix": "-dbmgr",
+            "dir": "ThirdParty/DatabaseManager"
+        }
+    ],
     "data": {
         "file_prefix": "Polygon4_Data_",
         "files": [
@@ -32,7 +43,8 @@
         "redirect": "https://www.dropbox.com/s/qmh4t89xdorgdo3/developer.json?dl=1"
     },
     "tools": {
-        "remove_untracked_content": { 
+        "redirect": "https://www.dropbox.com/s/fymblwbxq7hm9tc/tools.json?dl=1",
+        "remove_untracked_content": {
             "version": 1
         }
     }
