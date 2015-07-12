@@ -12,15 +12,15 @@
         {
             "name": "Polygon4",
             "url": "https://github.com/aimrebirth/Polygon4.git",
-            "url_format": "https://github.com/aimrebirth/Polygon4/archive/master.zip",
-            "master_suffix": "-master",
+            "url_zip": "https://github.com/aimrebirth/Polygon4/archive/master.zip",
+            "suffix": "master",
             "dir": "."
         },
         {
             "name": "DatabaseManager",
             "url": "https://github.com/aimrebirth/DatabaseManager.git",
-            "url_format": "https://github.com/aimrebirth/DatabaseManager/archive/master.zip",
-            "master_suffix": "-dbmgr",
+            "url_zip": "https://github.com/aimrebirth/DatabaseManager/archive/master.zip",
+            "suffix": "dbmgr",
             "dir": "ThirdParty/DatabaseManager"
         }
     ],
@@ -45,7 +45,7 @@
     "tools": {
         "redirect": "https://www.dropbox.com/s/fymblwbxq7hm9tc/tools.json?dl=1",
         "remove_untracked_content": {
-            "version": 1
+            "version": 2
         }
     }
 }
