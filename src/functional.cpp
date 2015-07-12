@@ -55,7 +55,7 @@ std::wstring to_wstring(std::string s)
 // function definitions
 //
 
-void create_project_files(wpath dir)
+void create_project_files(const wpath &dir)
 {
     auto sln = dir / "Polygon4.sln";
     auto uproject = dir / "Polygon4.uproject";
@@ -67,7 +67,7 @@ void create_project_files(wpath dir)
     }
 }
 
-void build_project(wpath dir)
+void build_project(const wpath &dir)
 {
     auto sln = dir / "Polygon4.sln";
     PRINT("Building Polygon4 Unreal project");
@@ -76,7 +76,7 @@ void build_project(wpath dir)
     SPACE();
 }
 
-void build_engine(wpath dir)
+void build_engine(const wpath &dir)
 {
     auto bin_dir = dir / "ThirdParty" / "Engine" / "Win64";
     auto sln_file = bin_dir / "Engine.sln";
@@ -88,7 +88,7 @@ void build_engine(wpath dir)
     SPACE();
 }
 
-void run_cmake(wpath dir)
+void run_cmake(const wpath &dir)
 {
     auto third_party = dir / "ThirdParty";
     auto swig_dir = third_party / "swig";
@@ -103,8 +103,10 @@ void run_cmake(wpath dir)
     if (cmake.empty())
         return;
     PRINT("Running CMake");
-    execute_command({ cmake, L"-H" + src_dir.wstring(),
+    execute_command({ cmake,
+        L"-H" + src_dir.wstring(),
         L"-B" + bin_dir.wstring(),
+        L"-DDATABASE_MANAGER_DIR=../DatabaseManager",
         L"-DBOOST_ROOT=" + boost_dir.wstring(),
         L"-DBOOST_LIBRARYDIR=" + boost_lib_dir.wstring(),
         L"-DSWIG_DIR=" + swig_dir.wstring(),
@@ -115,7 +117,7 @@ void run_cmake(wpath dir)
     SPACE();
 }
 
-void download_files(wpath dir, wpath output_dir, const pt::wptree &data)
+void download_files(const wpath &dir, const wpath &output_dir, const pt::wptree &data)
 {
     wstring redirect = data.get(L"redirect", L"");
     if (!redirect.empty())
@@ -184,7 +186,7 @@ void init()
     has_program_in_path(cmake);
 }
 
-void unpack(wstring file, wstring output_dir, bool exit_on_error)
+void unpack(const wstring &file, const wstring &output_dir, bool exit_on_error)
 {
     PRINT("Unpacking file: " << file);
     execute_command({ bootstrap_programs_prefix + _7z, L"x", L"-y", L"-o" + output_dir, file}, exit_on_error);
@@ -232,30 +234,15 @@ bool copy_dir(const wpath &source, const wpath &destination)
     return true;
 }
 
-void manual_download_sources(const pt::wptree &data)
+void manual_download_sources(const wpath &dir, const pt::wptree &data)
 {
-    auto format = data.get<wstring>(L"git.url_format");
-    auto master_suffix = data.get<wstring>(L"git.master_suffix");
-    for (auto &repo : data.get_child(L"sources.repositories"))
-    {
-        auto name = repo.second.get<wstring>(L"name");
-        auto url = (boost::wformat(format.c_str()) % name).str();
-        auto file = BOOTSTRAP_DOWNLOADS + name + master_suffix + ZIP_EXT;
-        download(url, file);
-    }
-    for (auto &repo : data.get_child(L"sources.repositories"))
-    {
-        auto name = repo.second.get<wstring>(L"name");
-        auto dir = BOOTSTRAP_DOWNLOADS + name + master_suffix;
-        auto file = dir + ZIP_EXT;
-        unpack(file, BOOTSTRAP_DOWNLOADS);
-
-        auto src = dir;
-        auto dst = data.get<wstring>(L"name");
-        if (name != dst)
-            dst += L"/" + repo.second.get<wstring>(L"unpack_dir") + L"/" + name;
-        copy_dir(src, dst);
-    }
+    auto url = data.get<wstring>(L"url_zip");
+    auto suffix = data.get<wstring>(L"suffix");
+    auto name = data.get<wstring>(L"name");
+    auto file = wpath(BOOTSTRAP_DOWNLOADS) / (name + L"-" + suffix + ZIP_EXT);
+    download(url, file.wstring());
+    unpack(file.wstring(), BOOTSTRAP_DOWNLOADS);
+    copy_dir(wpath(BOOTSTRAP_DOWNLOADS) / (name + L"-master"), dir);
 }
 
 void download_submodules()
@@ -263,7 +250,7 @@ void download_submodules()
     execute_command({git, L"submodule", L"update", L"--init", L"--recursive"});
 }
 
-void download_sources(wstring url)
+void download_sources(const wstring &url)
 {
     PRINT("Downloading latest sources from Github repositories");
     execute_command({git, L"clone", url, L"."});
@@ -286,9 +273,11 @@ void update_sources()
     SPACE();
 }
 
-void git_checkout(wpath dir, wstring url)
+void git_checkout(const wpath &dir, const wstring &url)
 {
     auto old_path = current_path();
+    if (!exists(dir))
+        create_directories(dir);
     current_path(dir);
 
     if (!exists(dir / ".git"))
@@ -315,7 +304,7 @@ bool has_program_in_path(wstring &prog)
     return ret;
 }
 
-pt::wptree load_data(wstring url)
+pt::wptree load_data(const wstring &url)
 {
     auto s = download(url);
     pt::wptree pt;
@@ -329,7 +318,7 @@ pt::wptree load_data(wstring url)
     return pt;
 }
 
-Bytes download(wstring url)
+Bytes download(const wstring &url)
 {
     PRINT("Downloading file: " << url);
     wstring file = (temp_directory_path() / "polygon4_bootstrap_temp_file").wstring();
@@ -337,7 +326,7 @@ Bytes download(wstring url)
     return read_file(file);
 }
 
-Bytes read_file(wstring file)
+Bytes read_file(const wstring &file)
 {
     auto size = file_size(file);
     FILE *f = fopen(to_string(file).c_str(), "rb");
@@ -352,7 +341,7 @@ Bytes read_file(wstring file)
     return bytes;
 }
 
-void download(wstring url, wstring file, int flags)
+void download(const wstring &url, const wstring &file, int flags)
 {
     if (file.empty())
     {
@@ -476,7 +465,7 @@ try
 
     return 0;
 }
-catch (std::exception e)
+catch (std::exception &e)
 {
     PRINT("Error " << e.what());
     check_return_code(1);

@@ -135,6 +135,14 @@ int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
     wpath download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
     create_directory(polygon4_dir);
+
+    PRINT("Do you REALLY want to DELETE ALL UNTRACKED FILES from developer content dir?");
+    PRINT("This will remove any changes you did and any new files you created.");
+    PRINT("Are you sure? (y/N)");
+    string answer;
+    getline(cin, answer);
+    if (answer.empty() || tolower(answer[0]) != 'y')
+        return 0;
     
     remove_untracked(data.get_child(L"developer"), polygon4_dir, polygon4_dir / "Content");
 

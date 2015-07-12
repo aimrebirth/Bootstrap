@@ -56,12 +56,19 @@ int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
     create_directory(polygon4_dir);
 
     if (!git.empty())
-        git_checkout(polygon4_dir, data.get<wstring>(L"git.url"));
+    {
+        for (const auto &repo : data.get_child(L"git"))
+            git_checkout(polygon4_dir / repo.second.get<wstring>(L"dir"), repo.second.get<wstring>(L"url"));
+    }
     else
-        manual_download_sources(data);
+    {
+        for (const auto &repo : data.get_child(L"git"))
+            manual_download_sources(polygon4_dir / repo.second.get<wstring>(L"dir"), repo.second);
+    }
         
     download_files(download_dir, polygon4, data.get_child(L"data"));
     download_files(download_dir, polygon4, data.get_child(L"developer"));
+    download_files(download_dir, base_dir, data.get_child(L"tools"));
     run_cmake(polygon4_dir);
     build_engine(polygon4_dir);
     create_project_files(polygon4_dir);

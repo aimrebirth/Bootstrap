@@ -42,7 +42,7 @@ namespace pt = boost::property_tree;
 
 #define BOOTSTRAPPER_VERSION                2
 #define BOOTSTRAP_UPDATER_VERSION           1
-#define UNTRACKED_CONTENT_DELETER_VERSION   1
+#define UNTRACKED_CONTENT_DELETER_VERSION   2
 
 #define POLYGON4_NAME L"Polygon4"
 #define BOOTSTRAP_DOWNLOADS L"BootstrapDownloads/"
@@ -58,7 +58,7 @@ namespace pt = boost::property_tree;
 #define PRINT(x) {cerr << x << "\n"; cerr.flush();}
 #define SPACE() PRINT("")
 #define CATCH(expr, ex, msg) \
-    try { expr; } catch (ex e) { PRINT(msg); exit(1); }
+    try { expr; } catch (ex &e) { PRINT(msg << ": " << e.what()); exit(1); }
 
 //
 // types
@@ -107,25 +107,25 @@ int version();
 void print_version();
 
 // all other
-pt::wptree load_data(wstring url);
-Bytes download(wstring url);
-void download(wstring url, wstring file, int flags = D_DEFAULT);
+pt::wptree load_data(const wstring &url);
+Bytes download(const wstring &url);
+void download(const wstring &url, const wstring &file, int flags = D_DEFAULT);
 void exit_program(int code);
 SubprocessAnswer execute_command(WStrings args, bool exit_on_error = true, stream_behavior stdout_behavior = inherit_stream());
 void check_return_code(int code);
 wstring to_string(const Bytes &b);
 void check_version(int version);
 bool has_program_in_path(wstring &prog);
-void git_checkout(wpath dir, wstring url);
-void download_sources(wstring url);
+void git_checkout(const wpath &dir, const wstring &url);
+void download_sources(const wstring &url);
 void download_submodules();
 void update_sources();
-void manual_download_sources(const pt::wptree &data);
-void unpack(wstring file, wstring output_dir, bool exit_on_error = true);
+void manual_download_sources(const wpath &dir, const pt::wptree &data);
+void unpack(const wstring &file, const wstring &output_dir, bool exit_on_error = true);
 bool copy_dir(const wpath &source, const wpath &destination);
-void download_files(wpath dir, wpath output_dir, const pt::wptree &data);
-void run_cmake(wpath dir);
-void build_engine(wpath dir);
-void create_project_files(wpath dir);
-void build_project(wpath dir);
-Bytes read_file(wstring file);
+void download_files(const wpath &dir, const wpath &output_dir, const pt::wptree &data);
+void run_cmake(const wpath &dir);
+void build_engine(const wpath &dir);
+void create_project_files(const wpath &dir);
+void build_project(const wpath &dir);
+Bytes read_file(const wstring &file);
