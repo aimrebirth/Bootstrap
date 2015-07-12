@@ -42,7 +42,9 @@ namespace pt = boost::property_tree;
 
 #define BOOTSTRAPPER_VERSION                2
 #define BOOTSTRAP_UPDATER_VERSION           1
+
 #define UNTRACKED_CONTENT_DELETER_VERSION   2
+#define BOOTSTRAPPER_TOOLS                  1
 
 #define POLYGON4_NAME L"Polygon4"
 #define BOOTSTRAP_DOWNLOADS L"BootstrapDownloads/"

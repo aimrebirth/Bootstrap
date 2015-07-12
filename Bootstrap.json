@@ -6,6 +6,9 @@
         "updater": {
             "version": 1,
             "archive_name": "bootstrap.zip"
+        },
+        "tools": { 
+            "version": 1
         }
     },
     "git": [

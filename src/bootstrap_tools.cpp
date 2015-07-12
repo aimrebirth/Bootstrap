@@ -22,12 +22,12 @@ wstring bootstrap_programs_prefix;
 
 int version()
 {
-    return BOOTSTRAPPER_VERSION;
+    return BOOTSTRAPPER_TOOLS;
 }
 
 void print_version()
 {
-    PRINT("Polygon-4 Developer Bootstrapper Version " << version());
+    PRINT("Polygon-4 Tools Bootstrapper Version " << version());
     SPACE();
 }
 
@@ -46,34 +46,14 @@ void check_version(int ver)
 int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
 {
     init();
-    check_version(data.get<int>(L"bootstrap.version"));
+    check_version(data.get<int>(L"bootstrap.tools.version"));
 
-    auto polygon4 = data.get<wstring>(L"name") + L"Developer";
     wpath base_dir = current_path();
-    wpath polygon4_dir = base_dir / polygon4;
     wpath download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
-    create_directory(polygon4_dir);
+    download_files(download_dir, current_path(), data.get_child(L"tools"));
 
-    if (!git.empty())
-    {
-        for (const auto &repo : data.get_child(L"git"))
-            git_checkout(polygon4_dir / repo.second.get<wstring>(L"dir"), repo.second.get<wstring>(L"url"));
-    }
-    else
-    {
-        for (const auto &repo : data.get_child(L"git"))
-            manual_download_sources(polygon4_dir / repo.second.get<wstring>(L"dir"), repo.second);
-    }
-        
-    download_files(download_dir, polygon4, data.get_child(L"data"));
-    download_files(download_dir, polygon4, data.get_child(L"developer"));
-    run_cmake(polygon4_dir);
-    build_engine(polygon4_dir);
-    create_project_files(polygon4_dir);
-    build_project(polygon4_dir);
-
-    PRINT("Bootstraped Polygon-4 Developer successfully");
+    PRINT("Bootstraped Polygon-4 Tools successfully");
 
     return 0;
 }
