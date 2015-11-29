@@ -66,7 +66,7 @@ int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
             manual_download_sources(polygon4_dir / repo.second.get<wstring>(L"dir"), repo.second);
     }
         
-    download_files(download_dir, polygon4, data.get_child(L"data"));
+    download_files(download_dir, polygon4 / "ThirdParty", data.get_child(L"data"));
     download_files(download_dir, polygon4, data.get_child(L"developer"));
     run_cmake(polygon4_dir);
     build_engine(polygon4_dir);
