@@ -33,7 +33,7 @@ extern wstring bootstrap_programs_prefix;
 
 wstring git = L"git";
 wstring cmake = L"cmake";
-wstring msbuild = L"C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\MSBuild.exe";
+wstring msbuild = L"c:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe";
 
 //
 // helper functions
