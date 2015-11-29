@@ -94,8 +94,8 @@ void run_cmake(const wpath &dir)
     auto swig_dir = third_party / "swig";
     auto swig_exe = swig_dir / "swig";
     auto tools_dir = third_party / "tools";
-    auto bison_exe = swig_dir / "bison";
-    auto flex_exe = swig_dir / "flex";
+    auto bison_exe = tools_dir / "bison";
+    auto flex_exe = tools_dir / "flex";
     auto boost_dir = third_party / "boost";
     auto boost_lib_dir = boost_dir / "lib64-msvc-14.0";
     auto src_dir = third_party / "Engine";
