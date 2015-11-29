@@ -93,8 +93,11 @@ void run_cmake(const wpath &dir)
     auto third_party = dir / "ThirdParty";
     auto swig_dir = third_party / "swig";
     auto swig_exe = swig_dir / "swig";
+    auto tools_dir = third_party / "tools";
+    auto bison_exe = swig_dir / "bison";
+    auto flex_exe = swig_dir / "flex";
     auto boost_dir = third_party / "boost";
-    auto boost_lib_dir = boost_dir / "lib64-msvc-12.0";
+    auto boost_lib_dir = boost_dir / "lib64-msvc-14.0";
     auto src_dir = third_party / "Engine";
     auto bin_dir = src_dir / "Win64";
     auto sln_file = bin_dir / "Engine.sln";
@@ -106,12 +109,14 @@ void run_cmake(const wpath &dir)
     execute_command({ cmake,
         L"-H" + src_dir.wstring(),
         L"-B" + bin_dir.wstring(),
-        L"-DDATABASE_MANAGER_DIR=../DatabaseManager",
+        L"-DDATA_MANAGER_DIR=../DataManager",
         L"-DBOOST_ROOT=" + boost_dir.wstring(),
         L"-DBOOST_LIBRARYDIR=" + boost_lib_dir.wstring(),
         L"-DSWIG_DIR=" + swig_dir.wstring(),
         L"-DSWIG_EXECUTABLE=" + swig_exe.wstring(),
-        L"-G", L"Visual Studio 12 Win64" });
+        L"-DBISON_EXECUTABLE=" + bison_exe.wstring(),
+        L"-DFLEX_EXECUTABLE=" + flex_exe.wstring(),
+        L"-G", L"Visual Studio 14 Win64" });
     if (!exists(sln_file))
         check_return_code(1);
     SPACE();

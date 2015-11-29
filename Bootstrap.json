@@ -1,7 +1,7 @@
 {
     "name": "Polygon4",
     "bootstrap": {
-        "version": 2,
+        "version": 3,
         "url": "https://www.dropbox.com/s/0zhbgb1ftspcv9w/polygon4.zip?dl=1",
         "updater": {
             "version": 1,
@@ -20,11 +20,11 @@
             "dir": "."
         },
         {
-            "name": "DatabaseManager",
-            "url": "https://github.com/aimrebirth/DatabaseManager.git",
-            "url_zip": "https://github.com/aimrebirth/DatabaseManager/archive/master.zip",
+            "name": "DataManager",
+            "url": "https://github.com/aimrebirth/DataManager.git",
+            "url_zip": "https://github.com/aimrebirth/DataManager/archive/master.zip",
             "suffix": "dbmgr",
-            "dir": "ThirdParty/DatabaseManager"
+            "dir": "ThirdParty/DataManager"
         }
     ],
     "data": {
