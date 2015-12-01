@@ -18,7 +18,9 @@
 
 #include "functional.h"
 
-wstring bootstrap_programs_prefix;
+DECLARE_STATIC_LOGGER(logger, "release");
+
+String bootstrap_programs_prefix;
 
 int version()
 {
@@ -27,36 +29,34 @@ int version()
 
 void print_version()
 {
-    PRINT("Polygon-4 Release Bootstrapper Version " << version());
-    SPACE();
+    LOG_INFO(logger, "Polygon-4 Release Bootstrapper Version " << version());
 }
 
 void check_version(int ver)
 {
     if (ver == version())
         return;
-    PRINT("FATAL ERROR:");
-    PRINT("You have wrong version of bootstrapper!");
-    PRINT("Actual version: " << ver);
-    PRINT("Your version: " << version());
-    PRINT("Please, run BootstrapUpdater.exe to update the bootstrapper.");
+    LOG_FATAL(logger, "You have wrong version of bootstrapper!");
+    LOG_FATAL(logger, "Actual version: " << ver);
+    LOG_FATAL(logger, "Your version: " << version());
+    LOG_FATAL(logger, "Please, run BootstrapUpdater.exe to update the bootstrapper.");
     exit_program(1);
 }
 
-int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
+int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
     init();
     check_version(data.get<int>(L"bootstrap.version"));
 
-    auto polygon4 = data.get<wstring>(L"name") + L"Release";
-    wpath base_dir = current_path();
-    wpath polygon4_dir = base_dir / polygon4;
-    wpath download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
+    auto polygon4 = path(data.get<String>(L"name") + L"Release");
+    auto base_dir = fs::current_path();
+    auto polygon4_dir = base_dir / polygon4;
+    auto download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
-    create_directory(polygon4_dir);
+    fs::create_directory(polygon4_dir);
     download_files(download_dir, polygon4, data.get_child(L"release"));
 
-    PRINT("Bootstraped Polygon-4 Release successfully");
+    LOG_INFO(logger, "Bootstraped Polygon-4 Release successfully");
 
     return 0;
 }

@@ -18,7 +18,7 @@ else()
     add_definitions(-DBOOST_ALL_DYN_LINK)
 endif(WIN32)
 
-find_package(Boost 1.54 REQUIRED filesystem)
+find_package(Boost 1.54 REQUIRED filesystem log)
 
 if (MSVC)
     set(disable_msvc_warnings "/W1 /wd4996")
@@ -29,6 +29,7 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif(MSVC)
 
+add_definitions(-DUSE_LOGGER=1)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 

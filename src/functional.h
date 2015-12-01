@@ -21,6 +21,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <boost/filesystem.hpp>
@@ -30,17 +31,16 @@
 #include <boost/format.hpp>
 
 #include "md5.h"
+#include "Logger.h"
 
-using namespace std;
-using namespace boost::filesystem;
-using namespace boost::process;
 namespace pt = boost::property_tree;
+namespace fs = boost::filesystem;
 
 #define BOOTSTRAP_JSON_FILE L"Bootstrap.json"
 #define BOOTSTRAP_JSON_DIR L"https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
 #define BOOTSTRAP_JSON_URL BOOTSTRAP_JSON_DIR BOOTSTRAP_JSON_FILE
 
-#define BOOTSTRAPPER_VERSION                3
+#define BOOTSTRAPPER_VERSION                4
 #define BOOTSTRAP_UPDATER_VERSION           1
 
 #define UNTRACKED_CONTENT_DELETER_VERSION   2
@@ -57,20 +57,20 @@ namespace pt = boost::property_tree;
 
 #define ZIP_EXT L".zip"
 
-#define PRINT(x) {cerr << x << "\n"; cerr.flush();}
-#define SPACE() PRINT("")
-#define CATCH(expr, ex, msg) \
-    try { expr; } catch (ex &e) { PRINT(msg << ": " << e.what()); exit(1); }
+#define LAST_WRITE_TIME_DATA L"lwt.json"
 
 //
 // types
 //
 
-typedef vector<string> Strings;
-typedef vector<wstring> WStrings;
+using path = fs::wpath;
+using ptree = pt::wptree;
 
-typedef uint8_t Byte;
-typedef vector<Byte> Bytes;
+using String = std::wstring;
+using Strings = std::vector<String>;
+
+using Byte = uint8_t;
+using Bytes = std::vector<Byte>;
 
 struct SubprocessAnswer
 {
@@ -90,9 +90,11 @@ enum DownloadFlags
 // global data
 //
 
-extern wstring git;
-extern wstring cmake;
-extern wstring msbuild;
+extern String git;
+extern String cmake;
+extern String msbuild;
+
+extern std::thread::id main_thread_id;
 
 //
 // function declarations
@@ -103,31 +105,34 @@ std::string to_string(std::wstring s);
 std::wstring to_wstring(std::string s);
 
 // main
-int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data);
+int bootstrap_module_main(int argc, char *argv[], const ptree &data);
 void init();
 int version();
 void print_version();
 
 // all other
-pt::wptree load_data(const wstring &url);
-Bytes download(const wstring &url);
-void download(const wstring &url, const wstring &file, int flags = D_DEFAULT);
+ptree load_data(const String &url);
+ptree load_data(const path &dir);
+Bytes download(const String &url);
+void download(const String &url, const String &file, int flags = D_DEFAULT);
 void exit_program(int code);
-SubprocessAnswer execute_command(WStrings args, bool exit_on_error = true, stream_behavior stdout_behavior = inherit_stream());
 void check_return_code(int code);
-wstring to_string(const Bytes &b);
+String to_string(const Bytes &b);
 void check_version(int version);
-bool has_program_in_path(wstring &prog);
-void git_checkout(const wpath &dir, const wstring &url);
-void download_sources(const wstring &url);
+bool has_program_in_path(String &prog);
+void git_checkout(const path &dir, const String &url);
+void download_sources(const String &url);
 void download_submodules();
 void update_sources();
-void manual_download_sources(const wpath &dir, const pt::wptree &data);
-void unpack(const wstring &file, const wstring &output_dir, bool exit_on_error = true);
-bool copy_dir(const wpath &source, const wpath &destination);
-void download_files(const wpath &dir, const wpath &output_dir, const pt::wptree &data);
-void run_cmake(const wpath &dir);
-void build_engine(const wpath &dir);
-void create_project_files(const wpath &dir);
-void build_project(const wpath &dir);
-Bytes read_file(const wstring &file);
+void manual_download_sources(const path &dir, const ptree &data);
+void unpack(const String &file, const String &output_dir, bool exit_on_error = true);
+bool copy_dir(const path &source, const path &destination);
+void download_files(const path &dir, const path &output_dir, const ptree &data);
+void run_cmake(const path &dir);
+void build_engine(const path &dir);
+void create_project_files(const path &dir);
+void build_project(const path &dir);
+Bytes read_file(const String &file);
+
+void execute_and_print(Strings args, bool exit_on_error = true);
+SubprocessAnswer execute_command(Strings args, bool exit_on_error = true);

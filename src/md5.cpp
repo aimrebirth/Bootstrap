@@ -32,7 +32,7 @@ std::string md5(std::wstring filename)
     if (INVALID_HANDLE_VALUE == hFile)
     {
         dwStatus = GetLastError();
-        printf("Error opening file %s\nError: %d\n", filename, 
+        wprintf(L"Error opening file %s\nError: %d\n", filename.c_str(), 
             dwStatus); 
         return "";
     }

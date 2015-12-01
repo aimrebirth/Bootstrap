@@ -16,24 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <atomic>
 #include <codecvt>
 #include <locale>
+#include <mutex>
 
 #include <boost/asio/io_service.hpp>
+#include <boost/thread.hpp>
 
 #include "functional.h"
 
-#include <boost/thread.hpp>
+DECLARE_STATIC_LOGGER(logger, "core");
 
 //
 // global data
 //
 
-extern wstring bootstrap_programs_prefix;
+extern String bootstrap_programs_prefix;
 
-wstring git = L"git";
-wstring cmake = L"cmake";
-wstring msbuild = L"c:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe";
+String git = L"git";
+String cmake = L"cmake";
+String msbuild = L"c:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe";
 
 //
 // helper functions
@@ -41,13 +44,13 @@ wstring msbuild = L"c:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe";
 
 std::string to_string(std::wstring s)
 {
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.to_bytes(s.c_str());
 }
 
 std::wstring to_wstring(std::string s)
 {
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.from_bytes(s.c_str());
 }
 
@@ -55,40 +58,35 @@ std::wstring to_wstring(std::string s)
 // function definitions
 //
 
-void create_project_files(const wpath &dir)
+void create_project_files(const path &dir)
 {
     auto sln = dir / "Polygon4.sln";
     auto uproject = dir / "Polygon4.uproject";
     if (/*!exists(sln) && */exists(uproject))
     {
-        PRINT("Creating project files");
-        execute_command({ bootstrap_programs_prefix + uvs, L"/projectfiles", uproject.wstring() });
-        SPACE();
+        LOG_INFO(logger, "Creating project files");
+        execute_and_print({ bootstrap_programs_prefix + uvs, L"/projectfiles", uproject.wstring() });
     }
 }
 
-void build_project(const wpath &dir)
+void build_project(const path &dir)
 {
     auto sln = dir / "Polygon4.sln";
-    PRINT("Building Polygon4 Unreal project");
-    SPACE();
-    execute_command({ msbuild, sln.wstring(), L"/p:Configuration=Development Editor", L"/p:Platform=Win64", L"/m" });
-    SPACE();
+    LOG_INFO(logger, "Building Polygon4 Unreal project");
+    execute_and_print({ msbuild, sln.wstring(), L"/p:Configuration=Development Editor", L"/p:Platform=Win64", L"/m" });
 }
 
-void build_engine(const wpath &dir)
+void build_engine(const path &dir)
 {
     auto bin_dir = dir / "ThirdParty" / "Engine" / "Win64";
     auto sln_file = bin_dir / "Engine.sln";
     if (!exists(sln_file))
         return;
-    PRINT("Building Engine");
-    SPACE();
-    execute_command({ cmake, L"--build", bin_dir.wstring(), L"--config", L"RelWithDebInfo" });
-    SPACE();
+    LOG_INFO(logger, "Building Engine");
+    execute_and_print({ cmake, L"--build", bin_dir.wstring(), L"--config", L"RelWithDebInfo" });
 }
 
-void run_cmake(const wpath &dir)
+void run_cmake(const path &dir)
 {
     auto third_party = dir / "ThirdParty";
     auto swig_dir = third_party / "swig";
@@ -105,8 +103,8 @@ void run_cmake(const wpath &dir)
         return;
     if (cmake.empty())
         return;
-    PRINT("Running CMake");
-    execute_command({ cmake,
+    LOG_INFO(logger, "Running CMake");
+    execute_and_print({ cmake,
         L"-H" + src_dir.wstring(),
         L"-B" + bin_dir.wstring(),
         L"-DDATA_MANAGER_DIR=../DataManager",
@@ -119,86 +117,166 @@ void run_cmake(const wpath &dir)
         L"-G", L"Visual Studio 14 Win64" });
     if (!exists(sln_file))
         check_return_code(1);
-    SPACE();
 }
 
-void download_files(const wpath &dir, const wpath &output_dir, const pt::wptree &data)
+void download_files(const path &dir, const path &output_dir, const ptree &data)
 {
-    wstring redirect = data.get(L"redirect", L"");
+    String redirect = data.get(L"redirect", L"");
     if (!redirect.empty())
     {
         auto data2 = load_data(redirect);
         download_files(dir, output_dir, data2);
         return;
     }
+    
+    std::atomic_int errors;
 
-    // parallel curl in case of noncompressed files
-    boost::asio::io_service io_service;
-    boost::thread_group threadpool;
-    boost::asio::io_service::work work(io_service);
-    for (int i = 0; i < 10; i++)
-        threadpool.create_thread(boost::bind(&boost::asio::io_service::run, &io_service));
-
-    wstring file_prefix = data.get(L"file_prefix", L"");
-    const pt::wptree &files = data.get_child(L"files");
-    for (auto &repo : files)
+    auto work = [&]()
     {
-        auto url = repo.second.get<wstring>(L"url");
-        auto name = repo.second.get<wstring>(L"name", L"");
-        auto file = (dir / file_prefix).wstring() + name;
-        auto hash = repo.second.get<wstring>(L"md5", L"");
-        auto check_path = repo.second.get(L"check_path", L"");
-        bool packed = repo.second.get<bool>(L"packed", false);
-        if (!packed)
+        boost::asio::io_service io_service;
+        boost::thread_group threadpool;
+        auto work = std::make_unique<boost::asio::io_service::work>(io_service);
+        for (int i = 0; i < 8; i++)
+            threadpool.create_thread([&io_service, &errors]()
         {
-            file = (output_dir / check_path).wstring();
-            if (!exists(file) || md5(file) != hash)
+            while (1)
             {
-                create_directories(wpath(file).parent_path());
-                // create empty files
-                ofstream ofile(file);
-                if (ofile)
-                    ofile.close();
-                io_service.post([file, url](){ download(url, file, D_NO_SPACE); });
+                try
+                {
+                    io_service.run();
+                }
+                catch (...)
+                {
+                    errors++;
+                    continue;
+                }
+                break;
             }
-            continue;
-        }
-        if (!exists(file) || md5(file) != hash)
+        });
+
+        // create last write time file catalog
+        auto lwt_file = path(BOOTSTRAP_DOWNLOADS) / LAST_WRITE_TIME_DATA;
+        if (!std::ifstream(lwt_file.string()))
+            std::ofstream(lwt_file.string()) << R"({})";
+        auto lwt_data = load_data(lwt_file);
+        std::mutex lwt_mutex;
+
+        String file_prefix = data.get(L"file_prefix", L"");
+        const ptree &files = data.get_child(L"files");
+        for (auto &repo : files)
         {
-            download(url, file);
-            if (md5(file) != hash)
+            io_service.post([&repo, &dir, &file_prefix, &output_dir, &lwt_data, &lwt_mutex]()
             {
-                PRINT("Wrong file is located on server! Cannot proceed.");
-                exit_program(1);
-            }
-            unpack(file, output_dir.wstring());
+                auto url = repo.second.get<String>(L"url");
+                auto name = repo.second.get<String>(L"name", L"");
+                auto file = (dir / file_prefix).wstring() + name;
+                auto hash = repo.second.get<String>(L"md5", L"");
+                auto check_path = repo.second.get(L"check_path", L"");
+                bool packed = repo.second.get<bool>(L"packed", false);
+                if (!packed)
+                {
+                    file = (output_dir / check_path).wstring();
+                    bool file_exists = fs::exists(file);
+                    if (file_exists)
+                    {
+                        int file_lwt = fs::last_write_time(file);
+                        if (lwt_data.count(file))
+                        {
+                            auto &file_lwt_data_main = lwt_data.find(file)->second;
+                            auto &file_lwt_data = file_lwt_data_main.get_child(L"lwt");
+                            int old_file_lwt = file_lwt_data.get_value<int>(0);
+                            if (old_file_lwt == 0)
+                            {
+                                old_file_lwt = file_lwt;
+                            }
+                            else if (old_file_lwt == file_lwt)
+                            {
+                                return;
+                            }
+                            file_lwt_data.put_value(file_lwt);
+                        }
+                        else
+                        {
+                            ptree value;
+                            value.add(L"lwt", file_lwt);
+
+                            std::lock_guard<std::mutex> g(lwt_mutex);
+                            lwt_data.add_child(ptree::path_type(file, '|'), value);
+                        }
+                    }
+                    if (!file_exists || md5(file) != to_string(hash))
+                    {
+                        create_directories(path(file).parent_path());
+                        // create empty files
+                        std::ofstream ofile(file);
+                        if (ofile)
+                            ofile.close();
+                        download(url, file, D_NO_SPACE);
+
+                        int file_lwt = fs::last_write_time(file);
+                        ptree value;
+                        value.add(L"lwt", file_lwt);
+
+                        std::lock_guard<std::mutex> g(lwt_mutex);
+                        lwt_data.add_child(ptree::path_type(file, '|'), value);
+                    }
+                    return;
+                }
+                if (!fs::exists(file) || md5(file) != to_string(hash))
+                {
+                    download(url, file);
+                    if (md5(file) != to_string(hash))
+                    {
+                        LOG_FATAL(logger, "Wrong file is located on server! Cannot proceed.");
+                        exit_program(1);
+                    }
+                    unpack(file, output_dir.wstring());
+                }
+                if (!check_path.empty() && !exists(output_dir / check_path))
+                {
+                    unpack(file, output_dir.wstring());
+                }
+            });
         }
-        if (!check_path.empty() && !exists(output_dir / check_path))
-        {
-            unpack(file, output_dir.wstring());
-        }
+
+        // work
+        work.reset();
+        threadpool.join_all();
+
+        pt::write_json(lwt_file.string(), lwt_data);
+    };
+
+    const int max_attempts = 3;
+    int attempts = 0;
+    while (1)
+    {
+        if (attempts == max_attempts)
+            break;
+        errors = 0;
+        work();
+        if (errors == 0)
+            break;
+        LOG_ERROR(logger, "Download files ended with " << errors << " error(s)");
+        LOG_ERROR(logger, "Retrying (" << ++attempts << ") ...");
     }
-    io_service.stop();
-    threadpool.join_all();
 }
 
 void init()
 {
-    create_directory(BOOTSTRAP_DOWNLOADS);
-    create_directory(BOOTSTRAP_PROGRAMS);
+    fs::create_directory(BOOTSTRAP_DOWNLOADS);
+    fs::create_directory(BOOTSTRAP_PROGRAMS);
 
     has_program_in_path(git);
     has_program_in_path(cmake);
 }
 
-void unpack(const wstring &file, const wstring &output_dir, bool exit_on_error)
+void unpack(const String &file, const String &output_dir, bool exit_on_error)
 {
-    PRINT("Unpacking file: " << file);
-    execute_command({ bootstrap_programs_prefix + _7z, L"x", L"-y", L"-o" + output_dir, file}, exit_on_error);
-    SPACE();
+    LOG_DEBUG(logger, "Unpacking file: " << file);
+    execute_and_print({ bootstrap_programs_prefix + _7z, L"x", L"-y", L"-o" + output_dir, file}, exit_on_error);
 }
 
-bool copy_dir(const wpath &source, const wpath &destination)
+bool copy_dir(const path &source, const path &destination)
 {
     namespace fs = boost::filesystem;
     try
@@ -220,7 +298,7 @@ bool copy_dir(const wpath &source, const wpath &destination)
     {
         try
         {
-            fs::wpath current(file->path());
+            path current(file->path());
             if (fs::is_directory(current))
             {
                 if (!copy_dir( current, destination / current.filename()))
@@ -239,48 +317,46 @@ bool copy_dir(const wpath &source, const wpath &destination)
     return true;
 }
 
-void manual_download_sources(const wpath &dir, const pt::wptree &data)
+void manual_download_sources(const path &dir, const ptree &data)
 {
-    auto url = data.get<wstring>(L"url_zip");
-    auto suffix = data.get<wstring>(L"suffix");
-    auto name = data.get<wstring>(L"name");
-    auto file = wpath(BOOTSTRAP_DOWNLOADS) / (name + L"-" + suffix + ZIP_EXT);
+    auto url = data.get<String>(L"url_zip");
+    auto suffix = data.get<String>(L"suffix");
+    auto name = data.get<String>(L"name");
+    auto file = path(BOOTSTRAP_DOWNLOADS) / (name + L"-" + suffix + ZIP_EXT);
     download(url, file.wstring());
     unpack(file.wstring(), BOOTSTRAP_DOWNLOADS);
-    copy_dir(wpath(BOOTSTRAP_DOWNLOADS) / (name + L"-master"), dir);
+    copy_dir(path(BOOTSTRAP_DOWNLOADS) / (name + L"-master"), dir);
 }
 
 void download_submodules()
 {
-    execute_command({git, L"submodule", L"update", L"--init", L"--recursive"});
+    execute_and_print({git, L"submodule", L"update", L"--init", L"--recursive"});
 }
 
-void download_sources(const wstring &url)
+void download_sources(const String &url)
 {
-    PRINT("Downloading latest sources from Github repositories");
-    execute_command({git, L"clone", url, L"."});
-    if (!exists(".git"))
+    LOG_INFO(logger, "Downloading latest sources from Github repositories");
+    execute_and_print({git, L"clone", url, L"."});
+    if (!fs::exists(".git"))
     {
-        execute_command({git, L"init"});
-        execute_command({git, L"remote", L"add", L"origin", url});
-        execute_command({git, L"fetch"});
-        execute_command({git, L"reset", L"origin/master", L"--hard"});
+        execute_and_print({git, L"init"});
+        execute_and_print({git, L"remote", L"add", L"origin", url});
+        execute_and_print({git, L"fetch"});
+        execute_and_print({git, L"reset", L"origin/master", L"--hard"});
     }
     download_submodules();
-    SPACE();
 }
 
 void update_sources()
 {
-    PRINT("Updating latest sources from Github repositories");
-    execute_command({git, L"pull", L"origin", L"master"});
+    LOG_INFO(logger, "Updating latest sources from Github repositories");
+    execute_and_print({git, L"pull", L"origin", L"master"});
     download_submodules();
-    SPACE();
 }
 
-void git_checkout(const wpath &dir, const wstring &url)
+void git_checkout(const path &dir, const String &url)
 {
-    auto old_path = current_path();
+    auto old_path = fs::current_path();
     if (!exists(dir))
         create_directories(dir);
     current_path(dir);
@@ -293,51 +369,62 @@ void git_checkout(const wpath &dir, const wstring &url)
     current_path(old_path);
 }
 
-bool has_program_in_path(wstring &prog)
+bool has_program_in_path(String &prog)
 {
     bool ret = true;
     try
     {
-        prog = to_wstring(find_executable_in_path(to_string(prog)));
+        prog = to_wstring(boost::process::find_executable_in_path(to_string(prog)));
     }
-    catch (filesystem_error)
+    catch (fs::filesystem_error &e)
     {
-        PRINT("Warning: \"" << prog << "\" is missing in your wpath environment variable");
-        SPACE();
+        LOG_WARN(logger, "'" << prog << "' is missing in your wpath environment variable. Error: " << e.what());
         ret = false;
     }
     return ret;
 }
 
-pt::wptree load_data(const wstring &url)
+ptree load_data(const String &url)
 {
     auto s = download(url);
-    pt::wptree pt;
-    wstringstream ss(to_string(s));
-    CATCH(
-        pt::json_parser::read_json(ss, pt),
-        pt::json_parser_error,
-        "Json file: " << url << " has errors in its structure!" << "\n"
-        "Please, report to the author."
-        );
+    ptree pt;
+    std::wstringstream ss(to_string(s));
+    try
+    {
+        pt::json_parser::read_json(ss, pt);
+    }
+    catch (pt::json_parser_error &e)
+    {
+        LOG_ERROR(logger, "Json file: " << url << " has errors in its structure!");
+        LOG_ERROR(logger, "Please, report to the author.");
+        throw;
+    }
     return pt;
 }
 
-Bytes download(const wstring &url)
+ptree load_data(const path &dir)
 {
-    PRINT("Downloading file: " << url);
-    wstring file = (temp_directory_path() / "polygon4_bootstrap_temp_file").wstring();
-    download(url, file, D_SILENT);
-    return read_file(file);
+    ptree pt;
+    try
+    {
+        pt::json_parser::read_json(dir.string(), pt);
+    }
+    catch (pt::json_parser_error &e)
+    {
+        LOG_ERROR(logger, "Json file: " << dir.string() << " has errors in its structure!");
+        LOG_ERROR(logger, "Please, report to the author.");
+        throw;
+    }
+    return pt;
 }
 
-Bytes read_file(const wstring &file)
+Bytes read_file(const String &file)
 {
-    auto size = file_size(file);
+    auto size = fs::file_size(file);
     FILE *f = fopen(to_string(file).c_str(), "rb");
     if (!f)
     {
-        PRINT("Cannot open file: " << file);
+        LOG_FATAL(logger, "Cannot open file: " << file);
         check_return_code(1);
     }
     Bytes bytes(size, 0);
@@ -346,63 +433,149 @@ Bytes read_file(const wstring &file)
     return bytes;
 }
 
-void download(const wstring &url, const wstring &file, int flags)
+Bytes download(const String &url)
+{
+    LOG_INFO(logger, "Downloading file: " << url);
+    auto file = (fs::temp_directory_path() / "polygon4_bootstrap_temp_file").wstring();
+    download(url, file, D_SILENT);
+    return read_file(file);
+}
+
+void download(const String &url, const String &file, int flags)
 {
     if (file.empty())
     {
-        PRINT("file is empty!");
+        LOG_FATAL(logger, "file is empty!");
         exit_program(1);
     }
     if (!(flags & D_SILENT))
-        PRINT("Downloading file: " << file);
-    execute_command({ bootstrap_programs_prefix + curl, L"-L", L"-k", (flags & D_CURL_SILENT) ? L"-s" : L"-#", L"-o" + file, url });
-    if (!(flags & D_NO_SPACE))
-        SPACE();
+    {
+        LOG_INFO(logger, "Downloading file: " << file);
+    }
+    else
+    {
+        LOG_TRACE(logger, "Downloading file: '" << file << "', url: '" << url << "'");
+    }
+    execute_and_print(
+    {
+        bootstrap_programs_prefix + curl,
+        L"-L", // follow redirects
+        L"-k", // insecure
+        L"--connect-timeout", L"30", // initial connection timeout
+        //L"--keepalive-time", L"45", // does not work on windows
+        //L"-m", L"600", // max time for download
+        (flags & D_CURL_SILENT) ? L"-s" : L"-#", // progress bar or silent
+        L"-o" + file, // output file
+        url
+    });
+    LOG_TRACE(logger, "Download completed: " << file);
 }
 
-SubprocessAnswer execute_command(WStrings args, bool exit_on_error, stream_behavior stdout_behavior)
+void execute_and_print(Strings args, bool exit_on_error)
 {
+    auto result = execute_command(args);
+
+    // print
+    LOG_TRACE(logger, to_string(result.bytes));
+
+    if (result.ret && exit_on_error)
+    {
+        // will die here
+        // allowed to fail only after cleanup work
+        check_return_code(result.ret);
+        // should not hit
+        abort();
+    }
+}
+
+std::istream &safe_getline(std::istream &is, std::string &s)
+{
+    s.clear();
+
+    std::istream::sentry se(is, true);
+    std::streambuf* sb = is.rdbuf();
+
+    for (;;) {
+        int c = sb->sbumpc();
+        switch (c) {
+        case '\n':
+            return is;
+        case '\r':
+            if (sb->sgetc() == '\n')
+                sb->sbumpc();
+            return is;
+        case EOF:
+            if (s.empty())
+                is.setstate(std::ios::eofbit | std::ios::failbit);
+            return is;
+        default:
+            s += (char)c;
+        }
+    }
+}
+
+SubprocessAnswer execute_command(Strings args, bool exit_on_error)
+{
+    using namespace boost::process;
+
     if (args[0].rfind(L".exe") != args[0].size() - 4)
         args[0] += L".exe";
     boost::algorithm::replace_all(args[0], "/", "\\");
 
-    std::wstring exec = absolute(args[0]).wstring();
+    auto exec = fs::absolute(args[0]).wstring();
 
-    Strings args_s;
+    std::vector<std::string> args_s;
     for (auto &a : args)
         args_s.push_back(to_string(a));
 
     context ctx;
-    ctx.stdout_behavior = stdout_behavior;
-    ctx.stderr_behavior = inherit_stream();
+    ctx.stdin_behavior = inherit_stream();
+    ctx.stdout_behavior = capture_stream();
+    ctx.stderr_behavior = capture_stream();
     
     SubprocessAnswer answer;
 
     try
     {
         child c = boost::process::launch(to_string(exec), args_s, ctx);
-        int ret = c.wait().exit_status();
-        if (ret && exit_on_error)
-            check_return_code(ret);
 
-        answer.ret = ret;
-
-        if (stdout_behavior.get_type() == capture_stream().get_type())
+        std::mutex m_answer;
+        auto stream_reader = [&c, &answer, &m_answer](std::istream &in, std::ostream &out)
         {
-            Bytes buf(1 << 20, 0);
-            pistream &stream = c.get_stdout();
-            while (stream)
+            std::thread t([&]()
             {
-                stream.read((char *)buf.data(), buf.size());
-                size_t read = stream.gcount();
-                answer.bytes.insert(answer.bytes.end(), buf.begin(), buf.begin() + read);
-            }
-            stream.close();
-        }
+                std::string s;
+                while (safe_getline(in, s))
+                {
+                    s += "\n";
+                    std::lock_guard<std::mutex> lock(m_answer);
+                    answer.bytes.insert(answer.bytes.end(), s.begin(), s.end());
+                    out << s;
+                }
+            });
+            return std::move(t);
+        };
+
+        auto &out = c.get_stdout();
+        auto &err = c.get_stderr();
+
+        auto t1 = stream_reader(out, std::cout);
+        auto t2 = stream_reader(err, std::cerr);
+
+        int ret = c.wait().exit_status();
+
+        t1.join();
+        t2.join();
+
+        out.close();
+        err.close();
+
+        answer.bytes.resize(answer.bytes.size() + 3, 0);
+        answer.ret = ret;
     }
     catch (...)
     {
-        PRINT("Cannot run command: " << exec);
+        LOG_FATAL(logger, "Command failed: " << exec);
         throw;
     }
 
@@ -413,70 +586,20 @@ void check_return_code(int code)
 {
     if (!code)
         return;
-    SPACE();
-    PRINT("Last bootstrap step failed");
+    LOG_ERROR(logger, "Last bootstrap step failed");
     exit_program(code);
 }
 
 void exit_program(int code)
 {
-    SPACE();
-    PRINT("Press Enter to continue...");
+    if (main_thread_id != std::this_thread::get_id())
+        throw std::runtime_error("Exit attempt in non main thread");
+    printf("Press Enter to continue...");
     getchar();
     exit(1);
 }
 
-wstring to_string(const Bytes &b)
+String to_string(const Bytes &b)
 {
-    return wstring(b.begin(), b.end());
-}
-
-int main(int argc, char *argv[])
-try
-{
-    // parse cmd
-    if (argc > 1)
-    {
-        for (int i = 1; i < argc; i++)
-        {
-            char *arg = argv[i];
-            if (*arg != '-')
-                continue;
-            if (strcmp(arg, "--copy") == 0)
-            {
-                char *dst = argv[++i];
-                copy_file(argv[0], dst, copy_option::overwrite_if_exists);
-                PRINT("Update successful.");
-                return 0;
-            }
-            else if (strcmp(arg, "--version") == 0)
-            {
-                print_version();
-                return 0;
-            }
-            else
-            {
-                PRINT("Unknown option: " << arg);
-                return 1;
-            }
-        }
-    }
-
-    print_version();
-
-    auto data = load_data(BOOTSTRAP_JSON_URL);
-
-    bootstrap_module_main(argc, argv, data);
-
-    return 0;
-}
-catch (std::exception &e)
-{
-    PRINT("Error " << e.what());
-    check_return_code(1);
-}
-catch (...)
-{
-    PRINT("FATAL ERROR: Unkown exception!");
-    return 1;
+    return String(b.begin(), b.end());
 }

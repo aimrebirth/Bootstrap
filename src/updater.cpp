@@ -18,9 +18,11 @@
 
 #include "functional.h"
 
+DECLARE_STATIC_LOGGER(logger, "updater");
+
 #include <process.h>
 
-wstring bootstrap_programs_prefix;
+String bootstrap_programs_prefix;
 
 int version()
 {
@@ -29,32 +31,30 @@ int version()
 
 void print_version()
 {
-    PRINT("Polygon-4 Bootstrap Updater Version " << version());
-    SPACE();
+    LOG_INFO(logger, "Polygon-4 Bootstrap Updater Version " << version());
 }
 
 void check_version(int ver)
 {
     if (ver == version())
         return;
-    PRINT("FATAL ERROR:");
-    PRINT("You have wrong version of bootstrap updater!");
-    PRINT("Actual version: " << ver);
-    PRINT("Your version: " << version());
-    PRINT("Please, run BootstrapUpdater.exe to update the component.");
+    LOG_FATAL(logger, "You have wrong version of bootstrap updater!");
+    LOG_FATAL(logger, "Actual version: " << ver);
+    LOG_FATAL(logger, "Your version: " << version());
+    LOG_FATAL(logger, "Please, run BootstrapUpdater.exe to update the component.");
     exit_program(1);
 }
 
-int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
+int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
     init();
     check_version(data.get<int>(L"bootstrap.updater.version"));
 
-    auto bootstrap_zip = data.get<wstring>(L"bootstrap.updater.archive_name");
+    auto bootstrap_zip = data.get<String>(L"bootstrap.updater.archive_name");
     auto file = BOOTSTRAP_DOWNLOADS + bootstrap_zip;
     auto bak = file + L".bak";
-    if (exists(file))
-        copy_file(file, bak, copy_option::overwrite_if_exists);
+    if (fs::exists(file))
+        fs::copy_file(file, bak, fs::copy_option::overwrite_if_exists);
 
     // remove old files
     remove("Bootstrap.exe");
@@ -62,20 +62,20 @@ int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
     remove("Bootstrap.log");
 
     auto bootstrapper_new = BOOTSTRAP_DOWNLOADS L"bootstrapper.new";
-    download(data.get<wstring>(L"bootstrap.url"), file);
-    remove_all(bootstrapper_new);
+    download(data.get<String>(L"bootstrap.url"), file);
+    fs::remove_all(bootstrapper_new);
     unpack(file, bootstrapper_new, false);
     copy_dir(bootstrapper_new, ".");
 
     // self update
-    wpath updater = bootstrapper_new / path(argv[0]).filename();
+    auto updater = bootstrapper_new / path(argv[0]).filename();
     auto exe = absolute(updater).normalize().wstring();
     auto arg0 = L"\"" + exe + L"\"";
     auto dst = L"\"" + to_wstring(argv[0]) + L"\"";
     if (_wexecl(exe.c_str(), arg0.c_str(), L"--copy", dst.c_str(), 0) == -1)
     {
-        PRINT("FATAL ERROR: errno = " << errno);
-        PRINT("Cannot update myself. Close the program and replace this file with newer BootstrapUpdater.");
+        LOG_FATAL(logger, "errno = " << errno);
+        LOG_FATAL(logger, "Cannot update myself. Close the program and replace this file with newer BootstrapUpdater.");
         exit_program(1);
     }
 

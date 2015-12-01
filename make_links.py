@@ -14,21 +14,17 @@ def main():
     data = []
     db_folder = sys.argv[2].replace('\\', '/')
     base_name = os.path.basename(db_folder)
-
-    has_old_json = False
-    old_json = None
-    old_files = None
-    old_md5 = dict()
+    
+    has_old_json = True
+    old_json = dict()
     if len(sys.argv) > 3:
-        has_old_json = True
         try:
-            old_json = json.load(open(sys.argv[3]))
+            j = json.load(open(sys.argv[3]))
+            old_files = j['files']
+            for f in old_files:
+                old_json[f['check_path']] = f
         except:
             has_old_json = False
-        if has_old_json:
-            old_files = old_json['files']
-            for f in old_files:
-                old_md5[f['check_path']] = f
 
     client = dropbox.client.DropboxClient(open('key.txt').read())
 
@@ -38,25 +34,33 @@ def main():
         for filename in files:
             real_filename = folder + '/' + filename
             filename = db_path + '/' + filename
-            file_md5 = md5(real_filename)
             file = filename[filename.find(db_folder) + len(db_folder):]
+            obj = dict()
+            lwt = int(os.path.getmtime(real_filename))
 
-            if has_old_json and file in old_md5.keys() and old_md5[file]['md5'] == file_md5:
-                #print('file with the same md5 has already a link')
-                url = old_md5[file]['url']
+            if has_old_json and file in old_json.keys():
+                if 'lwt' in old_json[file].keys() and old_json[file]['lwt'] == lwt:
+                    url = old_json[file]['url']
+                    obj['md5'] = old_json[file]['md5']
+                else:
+                    file_md5 = md5(real_filename)
+                    if old_json[file]['md5'] == file_md5:
+                        url = old_json[file]['url']
+                    obj['md5'] = file_md5
             else:
+                obj['md5'] = md5(real_filename)
+
                 f = client.share(filename, False)
                 url = f['url']
                 url = url[:len(url)-1] + '1'
                 print(url)
 
             # add to json
-            obj = dict()
             obj['name'] = os.path.basename(filename)
             obj['url'] = url
-            obj['md5'] = file_md5
             obj['check_path'] = file
             obj['packed'] = False
+            obj['lwt'] = lwt
 
             data.append(obj)
     json_data = dict()

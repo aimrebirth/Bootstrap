@@ -3,6 +3,7 @@
 #
 
 include_directories(include)
+include_directories(logger)
 
 ########################################
 # LIBRARY functional
@@ -12,8 +13,13 @@ set(functional_src
     functional.cpp
     functional.h
 
+    program.cpp
+
     md5.cpp
     md5.h
+
+    logger/Logger.h
+    logger/Logger.cpp
 
     ../Bootstrap.json
 )

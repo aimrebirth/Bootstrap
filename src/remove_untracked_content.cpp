@@ -20,7 +20,9 @@
 
 #include "functional.h"
 
-wstring bootstrap_programs_prefix = BOOTSTRAP_PREFIX;
+DECLARE_STATIC_LOGGER(logger, "rem_untr_cont");
+
+String bootstrap_programs_prefix = BOOTSTRAP_PREFIX;
 
 int version()
 {
@@ -29,25 +31,23 @@ int version()
 
 void print_version()
 {
-    PRINT("Polygon-4 Developer Untracked Content Deleter Version " << version());
-    SPACE();
+    LOG_INFO(logger, "Polygon-4 Developer Untracked Content Deleter Version " << version());
 }
 
 void check_version(int ver)
 {
     if (ver == version())
         return;
-    PRINT("FATAL ERROR:");
-    PRINT("You have wrong version of the tool!");
-    PRINT("Actual version: " << ver);
-    PRINT("Your version: " << version());
-    PRINT("Please, run BootstrapUpdater.exe to update the bootstrapper.");
+    LOG_FATAL(logger, "FATAL ERROR:");
+    LOG_FATAL(logger, "You have wrong version of the tool!");
+    LOG_FATAL(logger, "Actual version: " << ver);
+    LOG_FATAL(logger, "Your version: " << version());
+    LOG_FATAL(logger, "Please, run BootstrapUpdater.exe to update the bootstrapper.");
     exit_program(1);
 }
 
-void enumerate_files(const wpath &dir, set<wpath> &files)
+void enumerate_files(const path &dir, std::set<path> &files)
 {
-    namespace fs = boost::filesystem;
     try
     {
         if (!fs::exists(dir) || !fs::is_directory(dir))
@@ -79,9 +79,9 @@ void enumerate_files(const wpath &dir, set<wpath> &files)
     }
 }
 
-void remove_untracked(const pt::wptree &data, const wpath &dir, const wpath &content_dir)
+void remove_untracked(const ptree &data, const path &dir, const path &content_dir)
 {
-    wstring redirect = data.get(L"redirect", L"");
+    String redirect = data.get(L"redirect", L"");
     if (!redirect.empty())
     {
         auto data2 = load_data(redirect);
@@ -89,27 +89,27 @@ void remove_untracked(const pt::wptree &data, const wpath &dir, const wpath &con
         return;
     }
 
-    wstring file_prefix = data.get(L"file_prefix", L"");
-    const pt::wptree &files = data.get_child(L"files");
+    String file_prefix = data.get(L"file_prefix", L"");
+    const ptree &files = data.get_child(L"files");
 
-    set<wpath> actual_files;
+    std::set<path> actual_files;
     enumerate_files(content_dir, actual_files);
 
     for (auto &repo : files)
     {
-        auto name = repo.second.get<wstring>(L"name", L"");
+        auto name = repo.second.get<String>(L"name", L"");
         auto check_path = repo.second.get(L"check_path", L"");
         auto file = (dir / check_path).wstring();
         try
         {
-            file = canonical(file).wstring();
+            file = fs::canonical(file).wstring();
         }
         catch (std::exception &e)
         {
             e.what();
         }
-        auto hash = repo.second.get<wstring>(L"md5", L"");
-        if (exists(file))
+        auto hash = repo.second.get<String>(L"md5", L"");
+        if (fs::exists(file))
         {
             auto i = find(actual_files.begin(), actual_files.end(), file);
             if (i != actual_files.end())
@@ -120,33 +120,33 @@ void remove_untracked(const pt::wptree &data, const wpath &dir, const wpath &con
     }
     for (auto &f : actual_files)
     {
-        printf("removing: %s\n", f.string().c_str());
+        LOG_INFO(logger, "removing: " << f.wstring());
         remove(f);
     }
 }
 
-int bootstrap_module_main(int argc, char *argv[], const pt::wptree &data)
+int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
     check_version(data.get<int>(L"tools.remove_untracked_content.version"));
 
-    auto polygon4 = data.get<wstring>(L"name") + L"Developer";
-    wpath base_dir = current_path() / BOOTSTRAP_PREFIX;
-    wpath polygon4_dir = base_dir / polygon4;
-    wpath download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
+    auto polygon4 = data.get<String>(L"name") + L"Developer";
+    auto base_dir = fs::current_path() / BOOTSTRAP_PREFIX;
+    auto polygon4_dir = base_dir / polygon4;
+    auto download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
-    create_directory(polygon4_dir);
+    fs::create_directory(polygon4_dir);
 
-    PRINT("Do you REALLY want to DELETE ALL UNTRACKED FILES from developer content dir?");
-    PRINT("This will remove any changes you did and any new files you created.");
-    PRINT("Are you sure? (y/N)");
-    string answer;
-    getline(cin, answer);
+    printf("Do you REALLY want to DELETE ALL UNTRACKED FILES from developer content dir?");
+    printf("This will remove any changes you did and any new files you created.");
+    printf("Are you sure? (y/N)");
+    std::string answer;
+    std::getline(std::cin, answer);
     if (answer.empty() || tolower(answer[0]) != 'y')
         return 0;
     
     remove_untracked(data.get_child(L"developer"), polygon4_dir, polygon4_dir / "Content");
 
-    PRINT("Removed untracked contenr developer files successfully");
+    LOG_INFO(logger, "Removed untracked contenr developer files successfully");
 
     return 0;
 }
