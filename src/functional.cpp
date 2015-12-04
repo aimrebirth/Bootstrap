@@ -603,3 +603,82 @@ String to_string(const Bytes &b)
 {
     return String(b.begin(), b.end());
 }
+
+void enumerate_files(const path &dir, std::set<path> &files)
+{
+    try
+    {
+        if (!fs::exists(dir) || !fs::is_directory(dir))
+        {
+            std::cerr << "Source directory " << dir.string()
+                << " does not exist or is not a directory." << '\n';
+            return;
+        }
+    }
+    catch (fs::filesystem_error const & e)
+    {
+        std::cerr << e.what() << '\n';
+        return;
+    }
+    for (fs::directory_iterator file(dir); file != fs::directory_iterator(); ++file)
+    {
+        try
+        {
+            fs::wpath current(file->path());
+            if (fs::is_directory(current))
+                enumerate_files(current, files);
+            else
+                files.insert(canonical(current));
+        }
+        catch (fs::filesystem_error const & e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+    }
+}
+
+void remove_untracked(const ptree &data, const path &dir, const path &content_dir)
+{
+    LOG_INFO(logger, "Removing untracked files from " << content_dir.string());
+
+    String redirect = data.get(L"redirect", L"");
+    if (!redirect.empty())
+    {
+        auto data2 = load_data(redirect);
+        remove_untracked(data2, dir, content_dir);
+        return;
+    }
+
+    String file_prefix = data.get(L"file_prefix", L"");
+    const ptree &files = data.get_child(L"files");
+
+    std::set<path> actual_files;
+    enumerate_files(content_dir, actual_files);
+
+    std::set<path> package_files;
+    for (auto &file : files)
+    {
+        auto check_path = file.second.get(L"check_path", L"");
+        auto path = dir / check_path;
+        package_files.insert(path);
+    }
+
+    std::set<path> to_remove;
+    for (auto &file : actual_files)
+    {
+        if (package_files.count(file.wstring()))
+            continue;
+        to_remove.insert(file);
+    }
+    for (auto &f : to_remove)
+    {
+        LOG_INFO(logger, "removing: " << f.wstring());
+        remove(f);
+        auto p = f;
+        while (fs::is_empty(p = p.parent_path()))
+        {
+            LOG_INFO(logger, "removing empty dir: " << p.wstring());
+            fs::remove_all(p);
+        }
+    }
+}

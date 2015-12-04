@@ -56,6 +56,9 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     fs::create_directory(polygon4_dir);
     download_files(download_dir, polygon4, data.get_child(L"release"));
 
+    remove_untracked(data.get_child(L"release"), polygon4_dir, polygon4_dir / "Engine" / "Plugins");
+    remove_untracked(data.get_child(L"release"), polygon4_dir, polygon4_dir / "Polygon4" / "Plugins");
+
     LOG_INFO(logger, "Bootstraped Polygon-4 Release successfully");
 
     return 0;

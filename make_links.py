@@ -44,8 +44,7 @@ def main():
                     obj['md5'] = old_json[file]['md5']
                 else:
                     file_md5 = md5(real_filename)
-                    if old_json[file]['md5'] == file_md5:
-                        url = old_json[file]['url']
+                    url = old_json[file]['url']
                     obj['md5'] = file_md5
             else:
                 obj['md5'] = md5(real_filename)
