@@ -41,7 +41,7 @@ namespace fs = boost::filesystem;
 #define BOOTSTRAP_JSON_DIR L"https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
 #define BOOTSTRAP_JSON_URL BOOTSTRAP_JSON_DIR BOOTSTRAP_JSON_FILE
 
-#define BOOTSTRAPPER_VERSION                5
+#define BOOTSTRAPPER_VERSION                6
 #define BOOTSTRAP_UPDATER_VERSION           1
 
 #define UNTRACKED_CONTENT_DELETER_VERSION   2

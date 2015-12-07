@@ -1,7 +1,7 @@
 {
     "name": "Polygon4",
     "bootstrap": {
-        "version": 5,
+        "version": 6,
         "url": "https://www.dropbox.com/s/0zhbgb1ftspcv9w/polygon4.zip?dl=1",
         "updater": {
             "version": 1,

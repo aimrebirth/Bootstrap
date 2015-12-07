@@ -46,6 +46,7 @@ def main():
                     file_md5 = md5(real_filename)
                     url = old_json[file]['url']
                     obj['md5'] = file_md5
+                    print('changed: ' + file)
             else:
                 obj['md5'] = md5(real_filename)
 

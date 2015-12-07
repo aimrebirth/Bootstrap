@@ -20,6 +20,7 @@
 #include <codecvt>
 #include <locale>
 #include <mutex>
+#include <unordered_map>
 
 #include <boost/asio/io_service.hpp>
 #include <boost/thread.hpp>
@@ -170,9 +171,10 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                 auto url = repo.second.get<String>(L"url");
                 auto name = repo.second.get<String>(L"name", L"");
                 auto file = (dir / file_prefix).wstring() + name;
-                auto hash = repo.second.get<String>(L"md5", L"");
+                auto new_hash_md5 = repo.second.get<String>(L"md5", L"");
                 auto check_path = repo.second.get(L"check_path", L"");
                 bool packed = repo.second.get<bool>(L"packed", false);
+                String old_file_md5;
                 if (!packed)
                 {
                     file = (output_dir / check_path).wstring();
@@ -184,6 +186,8 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                         {
                             auto &file_lwt_data_main = lwt_data.find(file)->second;
                             auto &file_lwt_data = file_lwt_data_main.get_child(L"lwt");
+                            old_file_md5 = file_lwt_data_main.get(L"md5", String());
+
                             int old_file_lwt = file_lwt_data.get_value<int>(0);
                             if (old_file_lwt == 0)
                             {
@@ -191,20 +195,33 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                             }
                             else if (old_file_lwt == file_lwt)
                             {
-                                return;
+                                if (old_file_md5 == new_hash_md5)
+                                    return;
+                                else if (old_file_md5.empty())
+                                {
+                                    // no md5 was calculated before
+                                    old_file_md5 = to_wstring(md5(file));
+                                }
                             }
                             file_lwt_data.put_value(file_lwt);
+                            file_lwt_data_main.put(L"md5", new_hash_md5);
                         }
                         else
                         {
-                            ptree value;
-                            value.add(L"lwt", file_lwt);
+                            // no md5 was calculated before
+                            old_file_md5 = to_wstring(md5(file));
+                            if (old_file_md5 == new_hash_md5)
+                            {
+                                ptree value;
+                                value.add(L"lwt", file_lwt);
+                                value.add(L"md5", old_file_md5);
 
-                            std::lock_guard<std::mutex> g(lwt_mutex);
-                            lwt_data.add_child(ptree::path_type(file, '|'), value);
+                                std::lock_guard<std::mutex> g(lwt_mutex);
+                                lwt_data.add_child(ptree::path_type(file, '|'), value);
+                            }
                         }
                     }
-                    if (!file_exists || md5(file) != to_string(hash))
+                    if (!file_exists || old_file_md5 != new_hash_md5)
                     {
                         create_directories(path(file).parent_path());
                         // create empty files
@@ -213,19 +230,34 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                             ofile.close();
                         download(url, file, D_NO_SPACE);
 
+                        // file is changed in previous download, so md5 is of new file,
+                        //  not same in condition above!
+                        auto new_file_md5 = to_wstring(md5(file));
+
+                        // recheck hash
+                        if (new_file_md5 != new_hash_md5)
+                        {
+                            LOG_FATAL(logger, "Wrong file is located on server! Cannot proceed.");
+                            exit_program(1);
+                        }
+
                         int file_lwt = fs::last_write_time(file);
                         ptree value;
                         value.add(L"lwt", file_lwt);
+                        value.add(L"md5", new_file_md5);
 
                         std::lock_guard<std::mutex> g(lwt_mutex);
                         lwt_data.add_child(ptree::path_type(file, '|'), value);
                     }
                     return;
                 }
-                if (!fs::exists(file) || md5(file) != to_string(hash))
+                if (!fs::exists(file) || md5(file) != to_string(new_hash_md5))
                 {
                     download(url, file);
-                    if (md5(file) != to_string(hash))
+                    // file is changed in previous download, so md5 is of new file,
+                    //  not same in condition above!
+                    // recheck hash
+                    if (md5(file) != to_string(new_hash_md5))
                     {
                         LOG_FATAL(logger, "Wrong file is located on server! Cannot proceed.");
                         exit_program(1);
@@ -386,6 +418,10 @@ bool has_program_in_path(String &prog)
 
 ptree load_data(const String &url)
 {
+    static std::unordered_map<String, ptree> cached;
+    if (cached.count(url))
+        return cached[url];
+
     auto s = download(url);
     ptree pt;
     std::wstringstream ss(to_string(s));
@@ -399,7 +435,7 @@ ptree load_data(const String &url)
         LOG_ERROR(logger, "Please, report to the author.");
         throw;
     }
-    return pt;
+    return cached[url] = pt;
 }
 
 ptree load_data(const path &dir)
@@ -639,8 +675,6 @@ void enumerate_files(const path &dir, std::set<path> &files)
 
 void remove_untracked(const ptree &data, const path &dir, const path &content_dir)
 {
-    LOG_INFO(logger, "Removing untracked files from " << content_dir.string());
-
     String redirect = data.get(L"redirect", L"");
     if (!redirect.empty())
     {
@@ -648,6 +682,8 @@ void remove_untracked(const ptree &data, const path &dir, const path &content_di
         remove_untracked(data2, dir, content_dir);
         return;
     }
+
+    LOG_INFO(logger, "Removing untracked files from " << content_dir.string());
 
     String file_prefix = data.get(L"file_prefix", L"");
     const ptree &files = data.get_child(L"files");
