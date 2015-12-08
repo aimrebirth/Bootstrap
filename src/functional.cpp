@@ -302,9 +302,11 @@ void init()
     has_program_in_path(cmake);
 }
 
-void unpack(const String &file, const String &output_dir, bool exit_on_error)
+void unpack(const String &file, String output_dir, bool exit_on_error)
 {
     LOG_DEBUG(logger, "Unpacking file: " << file);
+    if (output_dir.empty())
+        output_dir = L".";
     execute_and_print({ bootstrap_programs_prefix + _7z, L"x", L"-y", L"-o" + output_dir, file}, exit_on_error);
 }
 
@@ -685,7 +687,6 @@ void remove_untracked(const ptree &data, const path &dir, const path &content_di
 
     LOG_INFO(logger, "Removing untracked files from " << content_dir.string());
 
-    String file_prefix = data.get(L"file_prefix", L"");
     const ptree &files = data.get_child(L"files");
 
     std::set<path> actual_files;

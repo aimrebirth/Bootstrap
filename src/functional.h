@@ -41,7 +41,7 @@ namespace fs = boost::filesystem;
 #define BOOTSTRAP_JSON_DIR L"https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
 #define BOOTSTRAP_JSON_URL BOOTSTRAP_JSON_DIR BOOTSTRAP_JSON_FILE
 
-#define BOOTSTRAPPER_VERSION                6
+#define BOOTSTRAPPER_VERSION                7
 #define BOOTSTRAP_UPDATER_VERSION           1
 
 #define UNTRACKED_CONTENT_DELETER_VERSION   2
@@ -126,7 +126,7 @@ void download_sources(const String &url);
 void download_submodules();
 void update_sources();
 void manual_download_sources(const path &dir, const ptree &data);
-void unpack(const String &file, const String &output_dir, bool exit_on_error = true);
+void unpack(const String &file, String output_dir, bool exit_on_error = true);
 bool copy_dir(const path &source, const path &destination);
 void download_files(const path &dir, const path &output_dir, const ptree &data);
 void run_cmake(const path &dir);
