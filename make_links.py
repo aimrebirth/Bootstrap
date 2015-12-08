@@ -53,7 +53,7 @@ def main():
                 f = client.share(filename, False)
                 url = f['url']
                 url = url[:len(url)-1] + '1'
-                print(url)
+                print('new: ' + url)
 
             # add to json
             obj['name'] = os.path.basename(filename)

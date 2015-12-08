@@ -18,7 +18,7 @@
 
 #include "functional.h"
 
-DECLARE_STATIC_LOGGER(logger, "developer");
+DECLARE_STATIC_LOGGER(logger, "latest");
 
 String bootstrap_programs_prefix;
 
@@ -29,7 +29,7 @@ int version()
 
 void print_version()
 {
-    LOG_INFO(logger, "Polygon-4 Developer Bootstrapper Version " << version());
+    LOG_INFO(logger, "Polygon-4 Latest Bootstrapper Version " << version());
 }
 
 void check_version(int ver)
@@ -54,29 +54,13 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
     fs::create_directory(polygon4_dir);
-
-    if (!git.empty())
-    {
-        for (const auto &repo : data.get_child(L"git"))
-            git_checkout(polygon4_dir / repo.second.get<String>(L"dir"), repo.second.get<String>(L"url"));
-    }
-    else
-    {
-        LOG_WARN(logger, "Git was not found. Trying to download files manually.");
-        for (const auto &repo : data.get_child(L"git"))
-            manual_download_sources(polygon4_dir / repo.second.get<String>(L"dir"), repo.second);
-    }
-
-    LOG_INFO(logger, "Downloading Third Party files...");
-    download_files(download_dir, polygon4 / "ThirdParty", data.get_child(L"data.ThirdParty"));
+    
+    LOG_INFO(logger, "Downloading Engine files...");
+    download_files(download_dir, polygon4.parent_path(), data.get_child(L"data.Engine"));
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child(L"developer"));
-    run_cmake(polygon4_dir);
-    build_engine(polygon4_dir);
-    create_project_files(polygon4_dir);
-    build_project(polygon4_dir);
 
-    LOG_INFO(logger, "Bootstraped Polygon-4 Developer successfully");
+    LOG_INFO(logger, "Bootstraped Polygon-4 Latest successfully");
 
     return 0;
 }

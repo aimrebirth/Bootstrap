@@ -1,13 +1,13 @@
 {
     "name": "Polygon4",
     "bootstrap": {
-        "version": 6,
+        "version": 7,
         "url": "https://www.dropbox.com/s/0zhbgb1ftspcv9w/polygon4.zip?dl=1",
         "updater": {
             "version": 1,
             "archive_name": "bootstrap.zip"
         },
-        "tools": { 
+        "tools": {
             "version": 1
         }
     },
@@ -28,16 +28,30 @@
         }
     ],
     "data": {
-        "file_prefix": "Polygon4_Data_",
-        "files": [
-            {
-                "name": "ThirdParty.7z",
-                "url": "https://www.dropbox.com/s/5s8tf9xxk3adv02/ThirdParty.7z?dl=1",
-                "md5": "1f3019aceb5fdaa535e56108cb969548",
-                "check_path": "boost",
-                "packed": true
-            }
-        ]
+        "ThirdParty": {
+            "file_prefix": "Polygon4_Data_",
+            "files": [
+                {
+                    "name": "ThirdParty.7z",
+                    "url": "https://www.dropbox.com/s/5s8tf9xxk3adv02/ThirdParty.7z?dl=1",
+                    "md5": "1f3019aceb5fdaa535e56108cb969548",
+                    "check_path": "boost",
+                    "packed": true
+                }
+            ]
+        },
+        "Engine": {
+            "file_prefix": "Polygon4_Data_",
+            "files": [
+                {
+                    "name": "Engine.7z",
+                    "url": "https://www.dropbox.com/s/5qkqvlurzma6qcq/Engine.7z?dl=1",
+                    "md5": "1dce5adf7cd53b3806ab541943e4905c",
+                    "check_path": "Engine",
+                    "packed": true
+                }
+            ]
+        }
     },
     "release": {
         "redirect": "https://www.dropbox.com/s/znaojezh0q1evqx/release.json?dl=1"
