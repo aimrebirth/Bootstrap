@@ -67,7 +67,7 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     
     remove_untracked(data.get_child(L"developer"), polygon4_dir, polygon4_dir / "Content");
 
-    LOG_INFO(logger, "Removed untracked contenr developer files successfully");
+    LOG_INFO(logger, "Removed untracked content developer files successfully");
 
     return 0;
 }

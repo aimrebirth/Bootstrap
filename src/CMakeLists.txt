@@ -41,19 +41,6 @@ target_link_libraries   (BootstrapDeveloper functional ${Boost_LIBRARIES})
 
 
 ########################################
-# EXECUTABLE BootstrapLatest
-########################################
-
-set(bootstrap_src
-    bootstrap_latest.cpp
-    functional.h
-)
-
-add_executable          (BootstrapLatest ${bootstrap_src})
-target_link_libraries   (BootstrapLatest functional ${Boost_LIBRARIES})
-
-
-########################################
 # EXECUTABLE BootstrapTools
 ########################################
 

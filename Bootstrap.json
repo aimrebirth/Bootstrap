@@ -39,18 +39,6 @@
                     "packed": true
                 }
             ]
-        },
-        "Engine": {
-            "file_prefix": "Polygon4_Data_",
-            "files": [
-                {
-                    "name": "Engine.7z",
-                    "url": "https://www.dropbox.com/s/5qkqvlurzma6qcq/Engine.7z?dl=1",
-                    "md5": "1dce5adf7cd53b3806ab541943e4905c",
-                    "check_path": "Engine",
-                    "packed": true
-                }
-            ]
         }
     },
     "release": {
