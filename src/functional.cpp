@@ -100,8 +100,6 @@ void run_cmake(const path &dir)
     auto src_dir = third_party / "Engine";
     auto bin_dir = src_dir / "Win64";
     auto sln_file = bin_dir / "Engine.sln";
-    if (exists(sln_file))
-        return;
     if (cmake.empty())
         return;
     LOG_INFO(logger, "Running CMake");
