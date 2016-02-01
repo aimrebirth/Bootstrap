@@ -61,9 +61,8 @@ std::wstring to_wstring(std::string s)
 
 void create_project_files(const path &dir)
 {
-    auto sln = dir / "Polygon4.sln";
     auto uproject = dir / "Polygon4.uproject";
-    if (/*!exists(sln) && */exists(uproject))
+    if (exists(uproject))
     {
         LOG_INFO(logger, "Creating project files");
         execute_and_print({ bootstrap_programs_prefix + uvs, L"/projectfiles", uproject.wstring() });
