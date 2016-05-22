@@ -32,8 +32,8 @@ std::string md5(std::wstring filename)
     if (INVALID_HANDLE_VALUE == hFile)
     {
         dwStatus = GetLastError();
-        wprintf(L"Error opening file %s\nError: %d\n", filename.c_str(), 
-            dwStatus); 
+        wprintf(L"Error opening file %s\nError: %d\n", filename.c_str(),
+            dwStatus);
         return "";
     }
 
@@ -45,7 +45,7 @@ std::string md5(std::wstring filename)
         CRYPT_VERIFYCONTEXT))
     {
         dwStatus = GetLastError();
-        printf("CryptAcquireContext failed: %d\n", dwStatus); 
+        printf("CryptAcquireContext failed: %d\n", dwStatus);
         CloseHandle(hFile);
         return "";
     }
@@ -53,13 +53,13 @@ std::string md5(std::wstring filename)
     if (!CryptCreateHash(hProv, CALG_MD5, 0, 0, &hHash))
     {
         dwStatus = GetLastError();
-        printf("CryptAcquireContext failed: %d\n", dwStatus); 
+        printf("CryptAcquireContext failed: %d\n", dwStatus);
         CloseHandle(hFile);
         CryptReleaseContext(hProv, 0);
         return "";
     }
 
-    while (bResult = ReadFile(hFile, rgbFile, BUFSIZE, 
+    while (bResult = ReadFile(hFile, rgbFile, BUFSIZE,
         &cbRead, NULL))
     {
         if (0 == cbRead)
@@ -70,7 +70,7 @@ std::string md5(std::wstring filename)
         if (!CryptHashData(hHash, rgbFile, cbRead, 0))
         {
             dwStatus = GetLastError();
-            printf("CryptHashData failed: %d\n", dwStatus); 
+            printf("CryptHashData failed: %d\n", dwStatus);
             CryptReleaseContext(hProv, 0);
             CryptDestroyHash(hHash);
             CloseHandle(hFile);
@@ -81,7 +81,7 @@ std::string md5(std::wstring filename)
     if (!bResult)
     {
         dwStatus = GetLastError();
-        printf("ReadFile failed: %d\n", dwStatus); 
+        printf("ReadFile failed: %d\n", dwStatus);
         CryptReleaseContext(hProv, 0);
         CryptDestroyHash(hHash);
         CloseHandle(hFile);
@@ -101,12 +101,12 @@ std::string md5(std::wstring filename)
     else
     {
         dwStatus = GetLastError();
-        printf("CryptGetHashParam failed: %d\n", dwStatus); 
+        printf("CryptGetHashParam failed: %d\n", dwStatus);
     }
 
     CryptDestroyHash(hHash);
     CryptReleaseContext(hProv, 0);
     CloseHandle(hFile);
 
-    return md5_s; 
-}  
+    return md5_s;
+}

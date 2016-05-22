@@ -12,21 +12,17 @@ project(Bootstrapper C CXX)
 # libraries and dependencies
 if (WIN32)
     set(Boost_USE_STATIC_LIBS ON)
-    set(Boost_USE_STATIC_RUNTIME ON)
     add_definitions(-D_WIN32_WINNT=0x0601)
 else()
     add_definitions(-DBOOST_ALL_DYN_LINK)
 endif(WIN32)
 
-find_package(Boost 1.54 REQUIRED filesystem log)
+find_package(Boost REQUIRED filesystem log)
 
 if (MSVC)
     set(disable_msvc_warnings "/W1 /wd4996")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP ${disable_msvc_warnings}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP ${disable_msvc_warnings}")
-
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif(MSVC)
 
 add_definitions(-DUSE_LOGGER=1)

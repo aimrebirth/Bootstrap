@@ -126,7 +126,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
         download_files(dir, output_dir, data2);
         return;
     }
-    
+
     std::atomic_int errors;
 
     auto work = [&]()
@@ -567,7 +567,7 @@ SubprocessAnswer execute_command(Strings args, bool exit_on_error)
     ctx.stdin_behavior = inherit_stream();
     ctx.stdout_behavior = capture_stream();
     ctx.stderr_behavior = capture_stream();
-    
+
     SubprocessAnswer answer;
 
     try
