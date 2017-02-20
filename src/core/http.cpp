@@ -35,6 +35,9 @@
 #pragma comment (lib, "Winhttp.lib")
 #endif
 
+#include "logger.h"
+DECLARE_STATIC_LOGGER(logger, "http");
+
 HttpSettings httpSettings;
 
 String getAutoProxy()

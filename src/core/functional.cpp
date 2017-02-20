@@ -108,10 +108,6 @@ void run_cmake(const path &dir)
     auto swig_dir = third_party / "swig";
     auto swig_exe = swig_dir / "swig";
     auto tools_dir = third_party / "tools";
-    auto bison_exe = tools_dir / "bison";
-    auto flex_exe = tools_dir / "flex";
-    auto boost_dir = third_party / "boost";
-    auto boost_lib_dir = boost_dir / "lib64-msvc-14.0";
     auto src_dir = third_party / "Engine";
     auto bin_dir = src_dir / "Win64";
     auto sln_file = bin_dir / "Engine.sln";
@@ -121,13 +117,8 @@ void run_cmake(const path &dir)
     execute_and_print({ cmake,
         "-H" + src_dir.string(),
         "-B" + bin_dir.string(),
-        "-DDATA_MANAGER_DIR=../DataManager",
-        "-DBOOST_ROOT=" + boost_dir.string(),
-        "-DBOOST_LIBRARYDIR=" + boost_lib_dir.string(),
         "-DSWIG_DIR=" + swig_dir.string(),
         "-DSWIG_EXECUTABLE=" + swig_exe.string(),
-        "-DBISON_EXECUTABLE=" + bison_exe.string(),
-        "-DFLEX_EXECUTABLE=" + flex_exe.string(),
         "-G", "Visual Studio 14 Win64" });
     if (!exists(sln_file))
         check_return_code(1);
@@ -150,7 +141,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
         boost::asio::io_service io_service;
         boost::thread_group threadpool;
         auto work = std::make_unique<boost::asio::io_service::work>(io_service);
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 16; i++)
             threadpool.create_thread([&io_service, &errors]()
         {
             while (1)
@@ -236,6 +227,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                     }
                     if (!file_exists || old_file_md5 != new_hash_md5)
                     {
+                        LOG_INFO(logger, "Downloading " << file);
                         download_file(url, file);
 
                         // file is changed in previous download, so md5 is of new file,
@@ -261,7 +253,9 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                 }
                 if (!fs::exists(file) || md5(file) != new_hash_md5)
                 {
+                    LOG_INFO(logger, "Downloading " << url);
                     download_file(url, file);
+
                     // file is changed in previous download, so md5 is of new file,
                     //  not same in condition above!
                     // recheck hash
