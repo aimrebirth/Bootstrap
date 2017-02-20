@@ -17,6 +17,8 @@
  */
 
 #include "functional.h"
+#include "http.h"
+#include "pack.h"
 
 #include "logger.h"
 DECLARE_STATIC_LOGGER(logger, "developer");
@@ -70,8 +72,17 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 
     LOG_INFO(logger, "Downloading Third Party files...");
     download_files(download_dir, polygon4 / "ThirdParty", data.get_child("data.ThirdParty"));
+    download_file("https://cppan.org/client/cppan-master-Windows-client.zip", BOOTSTRAP_DOWNLOADS + "cppan.zip"s);
+    if (boost::trim_copy(download_file("https://cppan.org/client/cppan-master-Windows-client.zip.md5")) != md5(path(BOOTSTRAP_DOWNLOADS + "cppan.zip"s)))
+    {
+        LOG_ERROR(logger, "Bad md5 for cppan binary");
+        return 1;
+    }
+    unpack_file(BOOTSTRAP_DOWNLOADS + "cppan.zip"s, BOOTSTRAP_PROGRAMS);
+
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child("developer"));
+
     run_cmake(polygon4_dir);
     build_engine(polygon4_dir);
     create_project_files(polygon4_dir);

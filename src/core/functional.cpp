@@ -111,8 +111,13 @@ void run_cmake(const path &dir)
     auto src_dir = third_party / "Engine";
     auto bin_dir = src_dir / "Win64";
     auto sln_file = bin_dir / "Engine.sln";
+
+    LOG_INFO(logger, "Running CPPAN");
+    execute_and_print({ BOOTSTRAP_PROGRAMS "cppan", "-d", src_dir.string() });
+
     if (cmake.empty())
         return;
+
     LOG_INFO(logger, "Running CMake");
     execute_and_print({ cmake,
         "-H" + src_dir.string(),
