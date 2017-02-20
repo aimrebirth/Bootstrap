@@ -18,6 +18,7 @@
 
 #include "functional.h"
 
+#include "logger.h"
 DECLARE_STATIC_LOGGER(logger, "release");
 
 String bootstrap_programs_prefix;
@@ -46,18 +47,18 @@ void check_version(int ver)
 int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
     init();
-    check_version(data.get<int>(L"bootstrap.version"));
+    check_version(data.get<int>("bootstrap.version"));
 
-    auto polygon4 = path(data.get<String>(L"name") + L"Release");
+    auto polygon4 = path(data.get<String>("name") + "Release");
     auto base_dir = fs::current_path();
     auto polygon4_dir = base_dir / polygon4;
     auto download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
     fs::create_directory(polygon4_dir);
-    download_files(download_dir, polygon4, data.get_child(L"release"));
+    download_files(download_dir, polygon4, data.get_child("release"));
 
-    remove_untracked(data.get_child(L"release"), polygon4_dir, polygon4_dir / "Engine" / "Plugins");
-    remove_untracked(data.get_child(L"release"), polygon4_dir, polygon4_dir / "Polygon4" / "Plugins");
+    remove_untracked(data.get_child("release"), polygon4_dir, polygon4_dir / "Engine" / "Plugins");
+    remove_untracked(data.get_child("release"), polygon4_dir, polygon4_dir / "Polygon4" / "Plugins");
 
     LOG_INFO(logger, "Bootstraped Polygon-4 Release successfully");
 

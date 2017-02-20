@@ -18,6 +18,7 @@
 
 #include "functional.h"
 
+#include "logger.h"
 DECLARE_STATIC_LOGGER(logger, "developer");
 
 String bootstrap_programs_prefix;
@@ -46,9 +47,9 @@ void check_version(int ver)
 int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
     init();
-    check_version(data.get<int>(L"bootstrap.version"));
+    check_version(data.get<int>("bootstrap.version"));
 
-    auto polygon4 = path(data.get<String>(L"name") + L"Developer");
+    auto polygon4 = path(data.get<String>("name") + "Developer");
     path base_dir = fs::current_path();
     path polygon4_dir = base_dir / polygon4;
     path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
@@ -57,20 +58,20 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 
     if (!git.empty())
     {
-        for (const auto &repo : data.get_child(L"git"))
-            git_checkout(polygon4_dir / repo.second.get<String>(L"dir"), repo.second.get<String>(L"url"));
+        for (const auto &repo : data.get_child("git"))
+            git_checkout(polygon4_dir / repo.second.get<String>("dir"), repo.second.get<String>("url"));
     }
     else
     {
         LOG_WARN(logger, "Git was not found. Trying to download files manually.");
-        for (const auto &repo : data.get_child(L"git"))
-            manual_download_sources(polygon4_dir / repo.second.get<String>(L"dir"), repo.second);
+        for (const auto &repo : data.get_child("git"))
+            manual_download_sources(polygon4_dir / repo.second.get<String>("dir"), repo.second);
     }
 
     LOG_INFO(logger, "Downloading Third Party files...");
-    download_files(download_dir, polygon4 / "ThirdParty", data.get_child(L"data.ThirdParty"));
+    download_files(download_dir, polygon4 / "ThirdParty", data.get_child("data.ThirdParty"));
     LOG_INFO(logger, "Downloading main developer files...");
-    download_files(download_dir, polygon4, data.get_child(L"developer"));
+    download_files(download_dir, polygon4, data.get_child("developer"));
     run_cmake(polygon4_dir);
     build_engine(polygon4_dir);
     create_project_files(polygon4_dir);

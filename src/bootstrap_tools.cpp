@@ -18,6 +18,7 @@
 
 #include "functional.h"
 
+#include "logger.h"
 DECLARE_STATIC_LOGGER(logger, "tools");
 
 String bootstrap_programs_prefix;
@@ -46,12 +47,12 @@ void check_version(int ver)
 int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
     init();
-    check_version(data.get<int>(L"bootstrap.tools.version"));
+    check_version(data.get<int>("bootstrap.tools.version"));
 
     path base_dir = fs::current_path();
     path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
-    download_files(download_dir, fs::current_path(), data.get_child(L"tools"));
+    download_files(download_dir, fs::current_path(), data.get_child("tools"));
 
     LOG_INFO(logger, "Bootstraped Polygon-4 Tools successfully");
 

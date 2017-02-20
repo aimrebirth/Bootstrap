@@ -70,7 +70,7 @@ try
 
     print_version();
 
-    auto data = load_data(std::wstring(BOOTSTRAP_JSON_URL));
+    auto data = load_data(String(BOOTSTRAP_JSON_URL));
 
     bootstrap_module_main(argc, argv, data);
 

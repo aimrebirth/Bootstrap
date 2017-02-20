@@ -17,7 +17,10 @@
  */
 
 #include "functional.h"
+#include "http.h"
+#include "pack.h"
 
+#include "logger.h"
 DECLARE_STATIC_LOGGER(logger, "updater");
 
 #include <process.h>
@@ -48,11 +51,11 @@ void check_version(int ver)
 int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
     init();
-    check_version(data.get<int>(L"bootstrap.updater.version"));
+    check_version(data.get<int>("bootstrap.updater.version"));
 
-    auto bootstrap_zip = data.get<String>(L"bootstrap.updater.archive_name");
+    auto bootstrap_zip = data.get<String>("bootstrap.updater.archive_name");
     auto file = BOOTSTRAP_DOWNLOADS + bootstrap_zip;
-    auto bak = file + L".bak";
+    auto bak = file + ".bak";
     if (fs::exists(file))
         fs::copy_file(file, bak, fs::copy_option::overwrite_if_exists);
 
@@ -61,10 +64,10 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     remove("BootstrapLog.ps1");
     remove("Bootstrap.log");
 
-    auto bootstrapper_new = BOOTSTRAP_DOWNLOADS L"bootstrapper.new";
-    download(data.get<String>(L"bootstrap.url"), file);
+    auto bootstrapper_new = BOOTSTRAP_DOWNLOADS "bootstrapper.new";
+    download_file(data.get<String>("bootstrap.url"), file);
     fs::remove_all(bootstrapper_new);
-    unpack(file, bootstrapper_new, false);
+    unpack_file(file, bootstrapper_new);
     copy_dir(bootstrapper_new, ".");
 
     // self update

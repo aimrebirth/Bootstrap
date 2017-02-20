@@ -20,7 +20,8 @@
 
 #include "functional.h"
 
-DECLARE_STATIC_LOGGER(logger, "rem_untr_cont");
+#include "logger.h"
+DECLARE_STATIC_LOGGER(logger, "rm_untr_cont");
 
 String bootstrap_programs_prefix = BOOTSTRAP_PREFIX;
 
@@ -48,9 +49,9 @@ void check_version(int ver)
 
 int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 {
-    check_version(data.get<int>(L"tools.remove_untracked_content.version"));
+    check_version(data.get<int>("tools.remove_untracked_content.version"));
 
-    auto polygon4 = data.get<String>(L"name") + L"Developer";
+    auto polygon4 = data.get<String>("name") + "Developer";
     auto base_dir = fs::current_path() / BOOTSTRAP_PREFIX;
     auto polygon4_dir = base_dir / polygon4;
     auto download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
@@ -64,8 +65,8 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     std::getline(std::cin, answer);
     if (answer.empty() || tolower(answer[0]) != 'y')
         return 0;
-    
-    remove_untracked(data.get_child(L"developer"), polygon4_dir, polygon4_dir / "Content");
+
+    remove_untracked(data.get_child("developer"), polygon4_dir, polygon4_dir / "Content");
 
     LOG_INFO(logger, "Removed untracked content developer files successfully");
 

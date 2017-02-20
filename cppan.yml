@@ -1,0 +1,40 @@
+projects:
+    core:
+        type: lib
+        static_only: true
+        files:
+            - src/core/.*
+            - Bootstrap.json
+        include_directories: src/core
+        options:
+            any:
+                definitions:
+                    public:
+                        - USE_LOGGER
+                        - _WIN32_WINNT=0x0601
+        dependencies:
+            - pvt.cppan.demo.boost.log: 1
+            - pvt.cppan.demo.klemens_morgenstern.boost.process: master
+            - pvt.cppan.demo.badger.curl.libcurl: 7
+            - pvt.cppan.demo.libarchive.libarchive: 3
+
+    bootstrap_developer:
+        files: src/bootstrap_developer.cpp
+        dependencies: core
+
+    bootstrap_release:
+        files: src/bootstrap_release.cpp
+        dependencies: core
+
+    bootstrap_tools:
+        files: src/bootstrap_tools.cpp
+        dependencies: core
+
+    updater:
+        files: src/updater.cpp
+        dependencies: core
+
+    remove_untracked_content:
+        files: src/remove_untracked_content.cpp
+        dependencies: core
+
