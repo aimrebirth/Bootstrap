@@ -1,3 +1,7 @@
+local_settings:
+    build:
+        use_shared_libs: false
+
 projects:
     core:
         type: lib
