@@ -21,13 +21,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
-#include <boost/filesystem.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/range.hpp>
-
 #include <boost/process.hpp>
-
 #include <boost/property_tree/json_parser.hpp>
+
+#include <primitives/filesystem.h>
 
 #include <iostream>
 #include <set>
@@ -65,26 +62,7 @@ namespace bp = boost::process;
 // types
 //
 
-using path = fs::wpath;
-using Files = std::unordered_set<path>;
-
-namespace std
-{
-    template<> struct hash<path>
-    {
-        size_t operator()(const path& p) const
-        {
-            return fs::hash_value(p);
-        }
-    };
-}
-
 using ptree = pt::ptree;
-
-using String = std::string;
-using Strings = std::vector<String>;
-
-using namespace std::literals;
 
 struct SubprocessAnswer
 {
@@ -108,17 +86,8 @@ extern std::thread::id main_thread_id;
 //
 
 // helpers
-std::string to_string(const std::wstring &s);
-std::wstring to_wstring(const std::string &s);
-
 path temp_directory_path(const path &subdir = path());
 path get_temp_filename(const path &subdir = path());
-
-String read_file(const path &p, bool no_size_check = false);
-void write_file(const path &p, const String &s);
-
-String md5(const path &fn);
-String md5(const String &data);
 
 // main
 int bootstrap_module_main(int argc, char *argv[], const ptree &data);
@@ -138,7 +107,6 @@ void download_sources(const String &url);
 void download_submodules();
 void update_sources();
 void manual_download_sources(const path &dir, const ptree &data);
-bool copy_dir(const path &source, const path &destination);
 void download_files(const path &dir, const path &output_dir, const ptree &data);
 void run_cmake(const path &dir);
 void build_engine(const path &dir);

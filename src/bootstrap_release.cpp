@@ -18,7 +18,7 @@
 
 #include "functional.h"
 
-#include "logger.h"
+#include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "release");
 
 String bootstrap_programs_prefix;

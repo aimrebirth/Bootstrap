@@ -17,10 +17,12 @@ projects:
                         - USE_LOGGER
                         - _WIN32_WINNT=0x0601
         dependencies:
-            - pvt.cppan.demo.boost.log: 1
-            - pvt.cppan.demo.klemens_morgenstern.boost.process: master
-            - pvt.cppan.demo.badger.curl.libcurl: 7
-            - pvt.cppan.demo.libarchive.libarchive: 3
+            - pvt.cppan.demo.klemens_morgenstern.boost.process: develop
+            - pvt.egorpugin.primitives.http: master
+            - pvt.egorpugin.primitives.log: master
+            - pvt.egorpugin.primitives.pack: master
+            - pvt.egorpugin.primitives.hash: master
+            - pvt.egorpugin.primitives.templates: master
 
     bootstrap_developer:
         files: src/bootstrap_developer.cpp

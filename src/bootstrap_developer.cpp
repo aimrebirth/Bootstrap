@@ -17,10 +17,12 @@
  */
 
 #include "functional.h"
-#include "http.h"
-#include "pack.h"
 
-#include "logger.h"
+#include <primitives/hash.h>
+#include <primitives/http.h>
+#include <primitives/pack.h>
+
+#include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "developer");
 
 String bootstrap_programs_prefix;

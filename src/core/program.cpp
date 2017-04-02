@@ -17,8 +17,8 @@
  */
 
 #include "functional.h"
-#include "Logger.h"
 
+#include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "main");
 
 std::thread::id main_thread_id;
@@ -29,14 +29,17 @@ try
     auto p = path(argv[0]);
     p = p.parent_path() / p.stem();
 
-    auto log_level =
+    LoggerSettings ls;
+    ls.log_level =
 #ifdef NDEBUG
         "Info"
 #else
         "Debug"
 #endif
         ;
-    LOGGER_CONFIGURE(log_level, p.string());
+    ls.log_file = p.string();
+    ls.print_trace = true;
+    initLogger(ls);
 
     main_thread_id = std::this_thread::get_id();
 

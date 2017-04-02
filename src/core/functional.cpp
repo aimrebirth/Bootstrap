@@ -17,8 +17,10 @@
  */
 
 #include "functional.h"
-#include "http.h"
-#include "pack.h"
+
+#include <primitives/hash.h>
+#include <primitives/http.h>
+#include <primitives/pack.h>
 
 #include <boost/asio/io_service.hpp>
 #include <boost/thread.hpp>
@@ -30,7 +32,7 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "logger.h"
+#include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "core");
 
 //
@@ -46,18 +48,6 @@ String msbuild = "c:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe";
 //
 // helper functions
 //
-
-std::string to_string(const std::wstring &s)
-{
-    static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    return converter.to_bytes(s.c_str());
-}
-
-std::wstring to_wstring(const std::string &s)
-{
-    static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    return converter.from_bytes(s.c_str());
-}
 
 path temp_directory_path(const path &subdir)
 {
@@ -218,6 +208,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                         else
                         {
                             // no md5 was calculated before
+                            LOG_INFO(logger, "Calculating md5 for " << file);
                             old_file_md5 = md5(file);
                             if (old_file_md5 == new_hash_md5)
                             {
@@ -307,47 +298,6 @@ void init()
 
     has_program_in_path(git);
     has_program_in_path(cmake);
-}
-
-bool copy_dir(const path &source, const path &destination)
-{
-    namespace fs = boost::filesystem;
-    try
-    {
-        if (!fs::exists(source) || !fs::is_directory(source))
-        {
-            std::cerr << "Source directory " << source.string()
-                << " does not exist or is not a directory." << '\n';
-            return false;
-        }
-        fs::create_directory(destination);
-    }
-    catch (fs::filesystem_error const & e)
-    {
-        std::cerr << e.what() << '\n';
-        return false;
-    }
-    for (fs::directory_iterator file(source); file != fs::directory_iterator(); ++file)
-    {
-        try
-        {
-            path current(file->path());
-            if (fs::is_directory(current))
-            {
-                if (!copy_dir( current, destination / current.filename()))
-                    return false;
-            }
-            else
-            {
-                fs::copy_file(current, destination / current.filename(), fs::copy_option::overwrite_if_exists);
-            }
-        }
-        catch (fs::filesystem_error const & e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-    }
-    return true;
 }
 
 void manual_download_sources(const path &dir, const ptree &data)
@@ -457,38 +407,6 @@ ptree load_data(const path &dir)
     return pt;
 }
 
-String read_file(const path &p, bool no_size_check)
-{
-    if (!fs::exists(p))
-        throw std::runtime_error("File '" + p.string() + "' does not exist");
-
-    auto fn = p.string();
-    std::ifstream ifile(fn, std::ios::in | std::ios::binary);
-    if (!ifile)
-        throw std::runtime_error("Cannot open file '" + fn + "' for reading");
-
-    size_t sz = (size_t)fs::file_size(p);
-    if (!no_size_check && sz > 10'000'000)
-        throw std::runtime_error("File " + fn + " is very big (> ~10 MB)");
-
-    String f;
-    f.resize(sz);
-    ifile.read(&f[0], sz);
-    return f;
-}
-
-void write_file(const path &p, const String &s)
-{
-    auto pp = p.parent_path();
-    if (!pp.empty())
-        fs::create_directories(pp);
-
-    std::ofstream ofile(p.string(), std::ios::out | std::ios::binary);
-    if (!ofile)
-        throw std::runtime_error("Cannot open file '" + p.string() + "' for writing");
-    ofile << s;
-}
-
 void execute_and_print(Strings args, bool exit_on_error)
 {
     auto result = execute_command(args);
@@ -545,14 +463,19 @@ SubprocessAnswer execute_command(Strings args, bool exit_on_error)
 
     bp::ipstream all, out, err;
 
-    //boost::asio::io_service io_service;
-    //bp::async_pipe p(io_service);
+    //boost::asio::io_service ios;
+    //std::vector<char> buf;
+
+    //bp::async_pipe ap(ios), ap2(ios);
 
     bp::child c(
         bp::exe = exec,
         bp::args = Strings{args.begin() + 1, args.end()},
 
-        (bp::std_out & bp::std_err) > all
+        //(bp::std_out & bp::std_err) > all
+        bp::std_out > out
+        , bp::std_err > err
+        //, ios
 
         /*io_service,
         bp::on_exit([&](int exit, const std::error_code& ec_in)
@@ -564,27 +487,66 @@ SubprocessAnswer execute_command(Strings args, bool exit_on_error)
         //bp::std_err > err
     );
 
-    /*std::vector<char> in_buf;
-    boost::asio::async_read(p, boost::asio::buffer(in_buf), [&answer, &in_buf](const boost::system::error_code &, std::size_t read)
+    /*std::function<void(void)> reg_reader;
+    reg_reader = [&]
     {
-        if (!read)
-            return;
-        answer.out += String(in_buf.begin(), in_buf.end()) + "\n";
-    });*/
+        boost::asio::async_read(ap, boost::asio::buffer(buf),
+            [&answer, &buf, &reg_reader](const boost::system::error_code &ec, std::size_t read)
+        {
+            if (ec)
+                return;
+            //reg_reader();
+            if (!read)
+                return;
+            answer.out += String(buf.begin(), buf.end()) + "\n";
+        });
+    };
+    reg_reader();
 
-    //io_service.run();
-
-
-    String s;
-    while (std::getline(all, s))
+    std::function<void(void)> reg_reader2;
+    reg_reader2 = [&]
     {
-        answer.out += s + "\n";
-        std::cout << s << "\n";
-    }
+        boost::asio::async_read(ap2, boost::asio::buffer(buf),
+            [&answer, &buf, &reg_reader2](const boost::system::error_code &ec, std::size_t read)
+        {
+            if (ec)
+                return;
+            //reg_reader2();
+            if (!read)
+                return;
+            answer.out += String(buf.begin(), buf.end()) + "\n";
+        });
+    };
+    reg_reader2();*/
+
+    //ios.run();
+
+    std::thread t1([&]
+    {
+        String s;
+        while (c.running() && std::getline(out, s))
+        {
+            answer.out += s + "\n";
+            std::cout << s << "\n";
+        }
+    });
+
+    std::thread t2([&]
+    {
+        String s;
+        while (c.running() && std::getline(err, s))
+        {
+            answer.err += s + "\n";
+            std::cerr << s << "\n";
+        }
+    });
 
     c.wait();
 
     answer.ret = c.exit_code();
+
+    t1.join();
+    t2.join();
 
     /*while (std::getline(err, s))
         answer.err += s + "\n";*/
@@ -633,6 +595,8 @@ SubprocessAnswer execute_command(Strings args, bool exit_on_error)
         throw;
     }*/
 
+    //answer.out += String(buf.begin(), buf.end()) + "\n";
+    //answer.err += String(in_buf2.begin(), in_buf2.end()) + "\n";
     return answer;
 }
 

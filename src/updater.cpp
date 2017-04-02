@@ -17,10 +17,11 @@
  */
 
 #include "functional.h"
-#include "http.h"
-#include "pack.h"
 
-#include "logger.h"
+#include <primitives/http.h>
+#include <primitives/pack.h>
+
+#include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "updater");
 
 #include <process.h>

@@ -20,7 +20,7 @@
 
 #include "functional.h"
 
-#include "logger.h"
+#include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "rm_untr_cont");
 
 String bootstrap_programs_prefix = BOOTSTRAP_PREFIX;
