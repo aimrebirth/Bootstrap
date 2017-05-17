@@ -39,7 +39,7 @@ namespace pt = boost::property_tree;
 #define BOOTSTRAP_JSON_DIR "https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
 #define BOOTSTRAP_JSON_URL BOOTSTRAP_JSON_DIR BOOTSTRAP_JSON_FILE
 
-#define BOOTSTRAPPER_VERSION                8
+#define BOOTSTRAPPER_VERSION                9
 #define BOOTSTRAP_UPDATER_VERSION           1
 
 #define UNTRACKED_CONTENT_DELETER_VERSION   2
