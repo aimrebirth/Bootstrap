@@ -21,7 +21,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
-#include <boost/process.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 #include <primitives/filesystem.h>
@@ -35,8 +34,6 @@
 #include <unordered_set>
 
 namespace pt = boost::property_tree;
-namespace fs = boost::filesystem;
-namespace bp = boost::process;
 
 #define BOOTSTRAP_JSON_FILE "Bootstrap.json"
 #define BOOTSTRAP_JSON_DIR "https://raw.githubusercontent.com/aimrebirth/Bootstrap/master/"
@@ -64,21 +61,11 @@ namespace bp = boost::process;
 
 using ptree = pt::ptree;
 
-struct SubprocessAnswer
-{
-    int ret = 0;
-    String out;
-    String err;
-};
-
 //
 // global data
 //
 
 extern String git;
-extern String cmake;
-extern String msbuild;
-
 extern std::thread::id main_thread_id;
 
 //
@@ -101,20 +88,14 @@ ptree load_data(const path &dir);
 void exit_program(int code);
 void check_return_code(int code);
 void check_version(int version);
-bool has_program_in_path(String &prog);
 void git_checkout(const path &dir, const String &url);
 void download_sources(const String &url);
 void download_submodules();
 void update_sources();
 void manual_download_sources(const path &dir, const ptree &data);
 void download_files(const path &dir, const path &output_dir, const ptree &data);
-void run_cmake(const path &dir);
-void build_engine(const path &dir);
-void create_project_files(const path &dir);
-void build_project(const path &dir);
 
 void enumerate_files(const path &dir, std::set<path> &files);
 void remove_untracked(const ptree &data, const path &dir, const path &content_dir);
 
 void execute_and_print(Strings args, bool exit_on_error = true);
-SubprocessAnswer execute_command(Strings args, bool exit_on_error = true);

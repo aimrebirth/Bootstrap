@@ -18,13 +18,13 @@
 
 #include "functional.h"
 
+#include <primitives/command.h>
 #include <primitives/hash.h>
 #include <primitives/http.h>
 #include <primitives/pack.h>
 
 #include <boost/asio/io_service.hpp>
 #include <boost/thread.hpp>
-#include <openssl/evp.h>
 
 #include <atomic>
 #include <codecvt>
@@ -42,8 +42,6 @@ DECLARE_STATIC_LOGGER(logger, "core");
 extern String bootstrap_programs_prefix;
 
 String git = "git";
-String cmake = "cmake";
-String msbuild = "c:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe";
 
 //
 // helper functions
@@ -64,60 +62,6 @@ path get_temp_filename(const path &subdir)
 //
 // function definitions
 //
-
-void create_project_files(const path &dir)
-{
-    auto uproject = dir / "Polygon4.uproject";
-    if (exists(uproject))
-    {
-        LOG_INFO(logger, "Creating project files");
-        execute_and_print({ bootstrap_programs_prefix + uvs, "/projectfiles", uproject.string() });
-    }
-}
-
-void build_project(const path &dir)
-{
-    auto sln = dir / "Polygon4.sln";
-    LOG_INFO(logger, "Building Polygon4 Unreal project");
-    execute_and_print({ msbuild, sln.string(), "/p:Configuration=Development Editor", "/p:Platform=Win64", "/m" });
-}
-
-void build_engine(const path &dir)
-{
-    auto bin_dir = dir / "ThirdParty" / "Engine" / "Win64";
-    auto sln_file = bin_dir / "Engine.sln";
-    if (!exists(sln_file))
-        return;
-    LOG_INFO(logger, "Building Engine");
-    execute_and_print({ cmake, "--build", bin_dir.string(), "--config", "RelWithDebInfo" });
-}
-
-void run_cmake(const path &dir)
-{
-    auto third_party = dir / "ThirdParty";
-    auto swig_dir = third_party / "swig";
-    auto swig_exe = swig_dir / "swig";
-    auto tools_dir = third_party / "tools";
-    auto src_dir = third_party / "Engine";
-    auto bin_dir = src_dir / "Win64";
-    auto sln_file = bin_dir / "Engine.sln";
-
-    LOG_INFO(logger, "Running CPPAN");
-    execute_and_print({ BOOTSTRAP_PROGRAMS "cppan", "-d", src_dir.string() });
-
-    if (cmake.empty())
-        return;
-
-    LOG_INFO(logger, "Running CMake");
-    execute_and_print({ cmake,
-        "-H" + src_dir.string(),
-        "-B" + bin_dir.string(),
-        "-DSWIG_DIR=" + swig_dir.string(),
-        "-DSWIG_EXECUTABLE=" + swig_exe.string(),
-        "-G", "Visual Studio 14 Win64" });
-    if (!exists(sln_file))
-        check_return_code(1);
-}
 
 void download_files(const path &dir, const path &output_dir, const ptree &data)
 {
@@ -295,9 +239,6 @@ void init()
 {
     fs::create_directory(BOOTSTRAP_DOWNLOADS);
     fs::create_directory(BOOTSTRAP_PROGRAMS);
-
-    has_program_in_path(git);
-    has_program_in_path(cmake);
 }
 
 void manual_download_sources(const path &dir, const ptree &data)
@@ -309,62 +250,6 @@ void manual_download_sources(const path &dir, const ptree &data)
     download_file(url, file);
     unpack_file(file, BOOTSTRAP_DOWNLOADS);
     copy_dir(path(BOOTSTRAP_DOWNLOADS) / (name + "-master"), dir);
-}
-
-void download_submodules()
-{
-    execute_and_print({git, "submodule", "update", "--init", "--recursive"});
-}
-
-void download_sources(const String &url)
-{
-    LOG_INFO(logger, "Downloading latest sources from Github repositories");
-    execute_and_print({git, "clone", url, "."});
-    if (!fs::exists(".git"))
-    {
-        execute_and_print({git, "init"});
-        execute_and_print({git, "remote", "add", "origin", url});
-        execute_and_print({git, "fetch"});
-        execute_and_print({git, "reset", "origin/master", "--hard"});
-    }
-    download_submodules();
-}
-
-void update_sources()
-{
-    LOG_INFO(logger, "Updating latest sources from Github repositories");
-    execute_and_print({git, "pull", "origin", "master"});
-    download_submodules();
-}
-
-void git_checkout(const path &dir, const String &url)
-{
-    auto old_path = fs::current_path();
-    if (!exists(dir))
-        create_directories(dir);
-    current_path(dir);
-
-    if (!exists(dir / ".git"))
-        download_sources(url);
-    else
-        update_sources();
-
-    current_path(old_path);
-}
-
-bool has_program_in_path(String &prog)
-{
-    bool ret = true;
-    try
-    {
-        prog = boost::process::search_path(prog).string();
-    }
-    catch (fs::filesystem_error &e)
-    {
-        LOG_WARN(logger, "'" << prog << "' is missing in your wpath environment variable. Error: " << e.what());
-        ret = false;
-    }
-    return ret;
 }
 
 ptree load_data(const String &url)
@@ -409,195 +294,29 @@ ptree load_data(const path &dir)
 
 void execute_and_print(Strings args, bool exit_on_error)
 {
-    auto result = execute_command(args);
+    command::Result ret;
+    auto print = [](const String &s)
+    {
+        LOG_INFO(logger, s);
+    };
+    command::Options o;
+    o.out.action = print;
+    o.err.action = print;
+
+    auto result = command::execute_and_capture(args, o);
 
     // print
     LOG_TRACE(logger, "OUT:\n" << result.out);
     LOG_TRACE(logger, "ERR:\n" << result.err);
 
-    if (result.ret && exit_on_error)
+    if (result.rc && exit_on_error)
     {
         // will die here
         // allowed to fail only after cleanup work
-        check_return_code(result.ret);
+        check_return_code(result.rc);
         // should not hit
         abort();
     }
-}
-
-std::istream &safe_getline(std::istream &is, std::string &s)
-{
-    s.clear();
-
-    std::istream::sentry se(is, true);
-    std::streambuf* sb = is.rdbuf();
-
-    for (;;) {
-        int c = sb->sbumpc();
-        switch (c) {
-        case '\n':
-            return is;
-        case '\r':
-            if (sb->sgetc() == '\n')
-                sb->sbumpc();
-            return is;
-        case EOF:
-            if (s.empty())
-                is.setstate(std::ios::eofbit | std::ios::failbit);
-            return is;
-        default:
-            s += (char)c;
-        }
-    }
-}
-
-SubprocessAnswer execute_command(Strings args, bool exit_on_error)
-{
-    if (args[0].rfind(".exe") != args[0].size() - 4)
-        args[0] += ".exe";
-    boost::algorithm::replace_all(args[0], "/", "\\");
-
-    auto exec = fs::absolute(args[0]).string();
-
-    SubprocessAnswer answer;
-
-    bp::ipstream all, out, err;
-
-    //boost::asio::io_service ios;
-    //std::vector<char> buf;
-
-    //bp::async_pipe ap(ios), ap2(ios);
-
-    bp::child c(
-        bp::exe = exec,
-        bp::args = Strings{args.begin() + 1, args.end()},
-
-        //(bp::std_out & bp::std_err) > all
-        bp::std_out > out
-        , bp::std_err > err
-        //, ios
-
-        /*io_service,
-        bp::on_exit([&](int exit, const std::error_code& ec_in)
-        {
-            p.async_close();
-        })*/
-
-        //bp::std_out > out,
-        //bp::std_err > err
-    );
-
-    /*std::function<void(void)> reg_reader;
-    reg_reader = [&]
-    {
-        boost::asio::async_read(ap, boost::asio::buffer(buf),
-            [&answer, &buf, &reg_reader](const boost::system::error_code &ec, std::size_t read)
-        {
-            if (ec)
-                return;
-            //reg_reader();
-            if (!read)
-                return;
-            answer.out += String(buf.begin(), buf.end()) + "\n";
-        });
-    };
-    reg_reader();
-
-    std::function<void(void)> reg_reader2;
-    reg_reader2 = [&]
-    {
-        boost::asio::async_read(ap2, boost::asio::buffer(buf),
-            [&answer, &buf, &reg_reader2](const boost::system::error_code &ec, std::size_t read)
-        {
-            if (ec)
-                return;
-            //reg_reader2();
-            if (!read)
-                return;
-            answer.out += String(buf.begin(), buf.end()) + "\n";
-        });
-    };
-    reg_reader2();*/
-
-    //ios.run();
-
-    std::thread t1([&]
-    {
-        String s;
-        while (c.running() && std::getline(out, s))
-        {
-            answer.out += s + "\n";
-            std::cout << s << "\n";
-        }
-    });
-
-    std::thread t2([&]
-    {
-        String s;
-        while (c.running() && std::getline(err, s))
-        {
-            answer.err += s + "\n";
-            std::cerr << s << "\n";
-        }
-    });
-
-    c.wait();
-
-    answer.ret = c.exit_code();
-
-    t1.join();
-    t2.join();
-
-    /*while (std::getline(err, s))
-        answer.err += s + "\n";*/
-
-    /*try
-    {
-        child c = boost::process::launch(to_string(exec), args_s, ctx);
-
-        std::mutex m_answer;
-        auto stream_reader = [&c, &answer, &m_answer](std::istream &in, std::ostream &out)
-        {
-            std::thread t([&]()
-            {
-                std::string s;
-                while (safe_getline(in, s))
-                {
-                    s += "\n";
-                    std::lock_guard<std::mutex> lock(m_answer);
-                    answer.bytes.insert(answer.bytes.end(), s.begin(), s.end());
-                    out << s;
-                }
-            });
-            return std::move(t);
-        };
-
-        auto &out = c.get_stdout();
-        auto &err = c.get_stderr();
-
-        auto t1 = stream_reader(out, std::cout);
-        auto t2 = stream_reader(err, std::cerr);
-
-        int ret = c.wait().exit_status();
-
-        t1.join();
-        t2.join();
-
-        out.close();
-        err.close();
-
-        answer.bytes.resize(answer.bytes.size() + 3, 0);
-        answer.ret = ret;
-    }
-    catch (...)
-    {
-        LOG_FATAL(logger, "Command failed: " << exec);
-        throw;
-    }*/
-
-    //answer.out += String(buf.begin(), buf.end()) + "\n";
-    //answer.err += String(in_buf2.begin(), in_buf2.end()) + "\n";
-    return answer;
 }
 
 void check_return_code(int code)
@@ -693,36 +412,4 @@ void remove_untracked(const ptree &data, const path &dir, const path &content_di
             fs::remove_all(p);
         }
     }
-}
-
-// keep always digits,lowercase,uppercase
-static const char alnum[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-String hash_to_string(const uint8_t *hash, size_t hash_size)
-{
-    String s;
-    for (uint32_t i = 0; i < hash_size; i++)
-    {
-        s += alnum[(hash[i] & 0xF0) >> 4];
-        s += alnum[(hash[i] & 0x0F) >> 0];
-    }
-    return s;
-}
-
-String hash_to_string(const String &hash)
-{
-    return hash_to_string((uint8_t *)hash.c_str(), hash.size());
-}
-
-String md5(const String &data)
-{
-    uint8_t hash[EVP_MAX_MD_SIZE];
-    uint32_t hash_size;
-    EVP_Digest(data.data(), data.size(), hash, &hash_size, EVP_md5(), nullptr);
-    return hash_to_string(hash, hash_size);
-}
-
-String md5(const path &fn)
-{
-    return md5(read_file(fn, true));
 }

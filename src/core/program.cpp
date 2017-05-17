@@ -18,6 +18,8 @@
 
 #include "functional.h"
 
+#include <thread>
+
 #include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "main");
 
@@ -54,6 +56,7 @@ try
             if (strcmp(arg, "--copy") == 0)
             {
                 char *dst = argv[++i];
+				std::this_thread::sleep_for(std::chrono::seconds(2));
                 copy_file(argv[0], dst, fs::copy_option::overwrite_if_exists);
                 LOG_INFO(logger, "Update successful.");
                 return 0;

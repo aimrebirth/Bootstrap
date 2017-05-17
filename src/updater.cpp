@@ -45,7 +45,7 @@ void check_version(int ver)
     LOG_FATAL(logger, "You have wrong version of bootstrap updater!");
     LOG_FATAL(logger, "Actual version: " << ver);
     LOG_FATAL(logger, "Your version: " << version());
-    LOG_FATAL(logger, "Please, run BootstrapUpdater.exe to update the component.");
+    LOG_FATAL(logger, "Please, run updater.exe to update the component.");
     exit_program(1);
 }
 
@@ -60,16 +60,17 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     if (fs::exists(file))
         fs::copy_file(file, bak, fs::copy_option::overwrite_if_exists);
 
-    // remove old files
-    remove("Bootstrap.exe");
-    remove("BootstrapLog.ps1");
-    remove("Bootstrap.log");
-
     auto bootstrapper_new = BOOTSTRAP_DOWNLOADS "bootstrapper.new";
     download_file(data.get<String>("bootstrap.url"), file);
     fs::remove_all(bootstrapper_new);
     unpack_file(file, bootstrapper_new);
-    copy_dir(bootstrapper_new, ".");
+    try
+    {
+		copy_dir(bootstrapper_new, ".");
+    }
+    catch (...)
+    {
+    }
 
     // self update
     auto updater = bootstrapper_new / path(argv[0]).filename();
@@ -79,7 +80,7 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     if (_wexecl(exe.c_str(), arg0.c_str(), L"--copy", dst.c_str(), 0) == -1)
     {
         LOG_FATAL(logger, "errno = " << errno);
-        LOG_FATAL(logger, "Cannot update myself. Close the program and replace this file with newer BootstrapUpdater.");
+        LOG_FATAL(logger, "Cannot update myself. Close the program and replace this file with newer updater.");
         exit_program(1);
     }
 
