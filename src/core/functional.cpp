@@ -41,7 +41,12 @@ DECLARE_STATIC_LOGGER(logger, "core");
 
 extern String bootstrap_programs_prefix;
 
-String git = "git";
+String git = "git"; 
+
+const int BOOTSTRAPPER_VERSION = 10;
+const int BOOTSTRAP_UPDATER_VERSION = 1;
+const int UNTRACKED_CONTENT_DELETER_VERSION = 2;
+const int BOOTSTRAPPER_TOOLS = 1;
 
 //
 // helper functions
@@ -62,6 +67,93 @@ path get_temp_filename(const path &subdir)
 //
 // function definitions
 //
+
+struct repository
+{
+	struct file
+	{
+		path name;
+		String url;
+		bool packed;
+		path check_path;
+		//time_t lwt;
+		String md5;
+
+		void load(const ptree &p)
+		{
+			url = p.get<String>("url");
+			name = p.get<String>("name", "");
+			md5 = p.get<String>("md5", "");
+			check_path = p.get("check_path", "");
+			packed = p.get<bool>("packed", false);
+		}
+	};
+
+	path file_prefix;
+	std::vector<file> files;
+
+	void load(const ptree &p)
+	{
+		file_prefix = p.get("file_prefix", "");
+		const ptree &pfs = p.get_child("files");
+		for (auto &pf : pfs)
+		{
+			file f;
+			f.load(pf.second);
+			files.push_back(f);
+		}
+	}
+};
+
+struct local_lwt
+{
+	struct file
+	{
+		String md5;
+		time_t lwt;
+
+		void load(const ptree &p)
+		{
+			md5 = p.get<String>("md5", "");
+			lwt = p.get<time_t>("lwt", 0);
+		}
+
+		void save(ptree &p)
+		{
+			p.put("md5", md5);
+			p.put("lwt", lwt);
+		}
+	};
+
+	std::unordered_map<path, file> files;
+
+	void load(const ptree &p)
+	{
+		for (auto &pf : p)
+		{
+			file f;
+			f.load(pf.second);
+			files[pf.first] = f;
+		}
+	}
+
+	ptree save()
+	{
+		ptree p;
+		for (auto &f : files)
+		{
+			ptree c;
+			f.second.save(c);
+			p.add_child(ptree::path_type(f.first.string(), '|'), c);
+		}
+		return p;
+	}
+
+	void save(const path &fn)
+	{
+		pt::write_json(fn.string(), save());
+	}
+};
 
 void download_files(const path &dir, const path &output_dir, const ptree &data)
 {
@@ -165,7 +257,12 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                             }
                         }
                     }
-                    if (!file_exists || old_file_md5 != new_hash_md5)
+					if (old_file_md5 != new_hash_md5)
+					{
+						LOG_INFO(logger, "File " << file << " has local modifications, skipping");
+						return;
+					}
+                    if (!file_exists)
                     {
                         LOG_INFO(logger, "Downloading " << file);
                         download_file(url, file);
@@ -275,16 +372,16 @@ ptree load_data(const String &url)
     return cached[url] = pt;
 }
 
-ptree load_data(const path &dir)
+ptree load_data(const path &fn)
 {
     ptree pt;
     try
     {
-        pt::json_parser::read_json(dir.string(), pt);
+        pt::json_parser::read_json(fn.string(), pt);
     }
     catch (pt::json_parser_error &e)
     {
-        LOG_ERROR(logger, "Json file: " << dir.string() << " has errors in its structure!");
+        LOG_ERROR(logger, "Json file: " << fn.string() << " has errors in its structure!");
         LOG_ERROR(logger, e.what());
         LOG_ERROR(logger, "Please, report to the author.");
         throw;

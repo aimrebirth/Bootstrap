@@ -23,6 +23,7 @@ projects:
             - pvt.egorpugin.primitives.hash: master
             - pvt.egorpugin.primitives.templates: master
             - pvt.egorpugin.primitives.command: master
+            - pvt.egorpugin.primitives.executor: master
 
     bootstrap_developer:
         files: src/bootstrap_developer.cpp
