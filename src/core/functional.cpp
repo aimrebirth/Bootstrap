@@ -41,7 +41,7 @@ DECLARE_STATIC_LOGGER(logger, "core");
 
 extern String bootstrap_programs_prefix;
 
-String git = "git";
+path git = "git";
 
 const int BOOTSTRAPPER_VERSION = 10;
 const int BOOTSTRAP_UPDATER_VERSION = 1;
@@ -391,26 +391,56 @@ ptree load_data(const path &fn)
 
 void execute_and_print(Strings args, bool exit_on_error)
 {
-    command::Result ret;
-    auto print = [](const String &s)
+    primitives::Command c;
+    auto print = [](const String &str, bool eof, String &out_line)
     {
-        LOG_INFO(logger, s);
-    };
-    command::Options o;
-    o.out.action = print;
-    o.err.action = print;
+        if (eof)
+        {
+            out_line += str;
+            LOG_INFO(logger, out_line);
+            return;
+        }
 
-    auto result = command::execute_and_capture(args, o);
+        size_t p = 0;
+        while (1)
+        {
+#ifdef _WIN32
+            size_t p1 = str.find_first_of("\r\n", p);
+#else
+            size_t p1 = str.find_first_of("\n", p);
+#endif
+            if (p1 == str.npos)
+            {
+                out_line += str.substr(p);
+                break;
+            }
+            out_line += str.substr(p, p1 - p);
+            LOG_INFO(logger, out_line);
+            out_line.clear();
+
+            p = ++p1;
+#ifdef _WIN32
+            if (str[p - 1] == '\r' && str.size() > p && str[p] == '\n')
+                p++;
+#endif
+        }
+    };
+    String out, err;
+    c.out.action = [&out, &print](const String &str, bool eof) { print(str, eof, out); };
+    c.err.action = [&err, &print](const String &str, bool eof) { print(str, eof, err); };
+    c.args = args;
+
+    c.execute();
 
     // print
-    LOG_TRACE(logger, "OUT:\n" << result.out);
-    LOG_TRACE(logger, "ERR:\n" << result.err);
+    LOG_TRACE(logger, "OUT:\n" << c.out.text);
+    LOG_TRACE(logger, "ERR:\n" << c.err.text);
 
-    if (result.rc && exit_on_error)
+    if (c.exit_code && exit_on_error)
     {
         // will die here
         // allowed to fail only after cleanup work
-        check_return_code(result.rc);
+        check_return_code(c.exit_code);
         // should not hit
         abort();
     }

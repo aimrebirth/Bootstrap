@@ -100,20 +100,21 @@ void build_engine(const path &dir)
 
 void build_project(const path &dir)
 {
-    if (auto msbuild = resolve_executable({
+    auto msbuild = primitives::resolve_executable({
         "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\MSBuild\\15.0\\Bin\\MSBuild.exe",
         "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Professional\\MSBuild\\15.0\\Bin\\MSBuild.exe",
-        "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\MSBuild\\15.0\\Bin\\MSBuild.exe" }))
+        "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\MSBuild\\15.0\\Bin\\MSBuild.exe" });
+    if (!msbuild.empty())
     {
         auto sln = dir / "Polygon4.sln";
         LOG_INFO(logger, "Building Polygon4 Unreal project");
-        execute_and_print({ msbuild.get().string(), sln.string(), "/p:Configuration=Development Editor", "/p:Platform=Win64", "/m" });
+        execute_and_print({ msbuild.string(), sln.string(), "/p:Configuration=Development Editor", "/p:Platform=Win64", "/m" });
     }
 }
 
 void download_submodules()
 {
-    execute_and_print({ git, "submodule", "update", "--init", "--recursive" });
+    execute_and_print({ git.string(), "submodule", "update", "--init", "--recursive" });
 }
 
 void download_sources(const String &url)
@@ -123,22 +124,22 @@ void download_sources(const String &url)
     {
         fs::remove(".gitignore");
         fs::remove(".gitmodules");
-        execute_and_print({ git, "init" });
-        execute_and_print({ git, "remote", "add", "origin", url });
-        execute_and_print({ git, "fetch" });
-        execute_and_print({ git, "reset", "origin/master", "--hard" });
-        execute_and_print({ git, "submodule", "deinit", "-f", "." });
+        execute_and_print({ git.string(), "init" });
+        execute_and_print({ git.string(), "remote", "add", "origin", url });
+        execute_and_print({ git.string(), "fetch" });
+        execute_and_print({ git.string(), "reset", "origin/master", "--hard" });
+        execute_and_print({ git.string(), "submodule", "deinit", "-f", "." });
         download_submodules();
     }
     else
-        execute_and_print({ git, "clone", url, "." });
+        execute_and_print({ git.string(), "clone", url, "." });
     download_submodules();
 }
 
 void update_sources()
 {
     LOG_INFO(logger, "Updating latest sources from Github repositories");
-    execute_and_print({ git, "pull", "origin", "master" });
+    execute_and_print({ git.string(), "pull", "origin", "master" });
     download_submodules();
 }
 
@@ -163,11 +164,12 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     check_version(data.get<int>("bootstrap.version"));
 
     // still init
-    if (auto has_cmake = resolve_executable({
-            cmake,
-            R"(c:\Program Files\CMake\bin\cmake.exe)",
-            R"(c:\Program Files (x86)\CMake\bin\cmake.exe)" }))
-        cmake = has_cmake.get();
+    auto has_cmake = primitives::resolve_executable({
+        cmake,
+        R"(c:\Program Files\CMake\bin\cmake.exe)",
+        R"(c:\Program Files (x86)\CMake\bin\cmake.exe)" });
+    if (!has_cmake.empty())
+        cmake = has_cmake;
 
     //
     auto polygon4 = path(data.get<String>("name") + "Developer");
@@ -177,7 +179,8 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 
     fs::create_directory(polygon4_dir);
 
-    if (resolve_executable(git))
+    git = primitives::resolve_executable(git);
+    if (!git.empty())
     {
         for (const auto &repo : data.get_child("git"))
             git_checkout(polygon4_dir / repo.second.get<String>("dir"), repo.second.get<String>("url"));

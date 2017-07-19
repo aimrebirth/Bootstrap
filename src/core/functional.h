@@ -64,7 +64,7 @@ using ptree = pt::ptree;
 // global data
 //
 
-extern String git;
+extern path git;
 extern std::thread::id main_thread_id;
 
 //
