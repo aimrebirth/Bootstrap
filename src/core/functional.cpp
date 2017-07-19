@@ -41,7 +41,7 @@ DECLARE_STATIC_LOGGER(logger, "core");
 
 extern String bootstrap_programs_prefix;
 
-String git = "git"; 
+String git = "git";
 
 const int BOOTSTRAPPER_VERSION = 10;
 const int BOOTSTRAP_UPDATER_VERSION = 1;
@@ -257,11 +257,6 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                             }
                         }
                     }
-					if (old_file_md5 != new_hash_md5)
-					{
-						LOG_INFO(logger, "File " << file << " has local modifications, skipping");
-						return;
-					}
                     if (!file_exists)
                     {
                         LOG_INFO(logger, "Downloading " << file);
@@ -285,6 +280,11 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
 
                         std::lock_guard<std::mutex> g(lwt_mutex);
                         lwt_data.add_child(ptree::path_type(file.string(), '|'), value);
+                    }
+                    else if (old_file_md5 != new_hash_md5)
+                    {
+                        LOG_INFO(logger, "File " << file << " has local modifications, skipping");
+                        return;
                     }
                     return;
                 }
