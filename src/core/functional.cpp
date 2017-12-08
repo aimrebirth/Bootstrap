@@ -70,89 +70,89 @@ path get_temp_filename(const path &subdir)
 
 struct repository
 {
-	struct file
-	{
-		path name;
-		String url;
-		bool packed;
-		path check_path;
-		//time_t lwt;
-		String md5;
+    struct file
+    {
+        path name;
+        String url;
+        bool packed;
+        path check_path;
+        //time_t lwt;
+        String md5;
 
-		void load(const ptree &p)
-		{
-			url = p.get<String>("url");
-			name = p.get<String>("name", "");
-			md5 = p.get<String>("md5", "");
-			check_path = p.get("check_path", "");
-			packed = p.get<bool>("packed", false);
-		}
-	};
+        void load(const ptree &p)
+        {
+            url = p.get<String>("url");
+            name = p.get<String>("name", "");
+            md5 = p.get<String>("md5", "");
+            check_path = p.get("check_path", "");
+            packed = p.get<bool>("packed", false);
+        }
+    };
 
-	path file_prefix;
-	std::vector<file> files;
+    path file_prefix;
+    std::vector<file> files;
 
-	void load(const ptree &p)
-	{
-		file_prefix = p.get("file_prefix", "");
-		const ptree &pfs = p.get_child("files");
-		for (auto &pf : pfs)
-		{
-			file f;
-			f.load(pf.second);
-			files.push_back(f);
-		}
-	}
+    void load(const ptree &p)
+    {
+        file_prefix = p.get("file_prefix", "");
+        const ptree &pfs = p.get_child("files");
+        for (auto &pf : pfs)
+        {
+            file f;
+            f.load(pf.second);
+            files.push_back(f);
+        }
+    }
 };
 
 struct local_lwt
 {
-	struct file
-	{
-		String md5;
-		time_t lwt;
+    struct file
+    {
+        String md5;
+        time_t lwt;
 
-		void load(const ptree &p)
-		{
-			md5 = p.get<String>("md5", "");
-			lwt = p.get<time_t>("lwt", 0);
-		}
+        void load(const ptree &p)
+        {
+            md5 = p.get<String>("md5", "");
+            lwt = p.get<time_t>("lwt", 0);
+        }
 
-		void save(ptree &p)
-		{
-			p.put("md5", md5);
-			p.put("lwt", lwt);
-		}
-	};
+        void save(ptree &p)
+        {
+            p.put("md5", md5);
+            p.put("lwt", lwt);
+        }
+    };
 
-	std::unordered_map<path, file> files;
+    std::unordered_map<path, file> files;
 
-	void load(const ptree &p)
-	{
-		for (auto &pf : p)
-		{
-			file f;
-			f.load(pf.second);
-			files[pf.first] = f;
-		}
-	}
+    void load(const ptree &p)
+    {
+        for (auto &pf : p)
+        {
+            file f;
+            f.load(pf.second);
+            files[pf.first] = f;
+        }
+    }
 
-	ptree save()
-	{
-		ptree p;
-		for (auto &f : files)
-		{
-			ptree c;
-			f.second.save(c);
-			p.add_child(ptree::path_type(f.first.string(), '|'), c);
-		}
-		return p;
-	}
+    ptree save()
+    {
+        ptree p;
+        for (auto &f : files)
+        {
+            ptree c;
+            f.second.save(c);
+            p.add_child(ptree::path_type(f.first.string(), '|'), c);
+        }
+        return p;
+    }
 
-	void save(const path &fn)
-	{
-		pt::write_json(fn.string(), save());
-	}
+    void save(const path &fn)
+    {
+        pt::write_json(fn.string(), save());
+    }
 };
 
 void download_files(const path &dir, const path &output_dir, const ptree &data)
@@ -440,7 +440,7 @@ void execute_and_print(Strings args, bool exit_on_error)
     {
         // will die here
         // allowed to fail only after cleanup work
-        check_return_code(c.exit_code);
+        check_return_code(c.exit_code.value());
         // should not hit
         abort();
     }

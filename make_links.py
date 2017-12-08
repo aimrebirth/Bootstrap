@@ -14,7 +14,7 @@ def main():
     data = []
     db_folder = sys.argv[2].replace('\\', '/')
     base_name = os.path.basename(db_folder)
-    
+
     has_old_json = True
     old_json = dict()
     if len(sys.argv) > 3:
@@ -26,7 +26,7 @@ def main():
         except:
             has_old_json = False
 
-    client = dropbox.client.DropboxClient(open('key.txt').read())
+    dbx = dropbox.Dropbox(open('key.txt').read())
 
     for folder, subs, files in os.walk(sys.argv[1] + '/' + db_folder):
         folder = os.path.abspath(folder).replace('\\', '/')
@@ -50,8 +50,8 @@ def main():
             else:
                 obj['md5'] = md5(real_filename)
 
-                f = client.share(filename, False)
-                url = f['url']
+                f = dbx.sharing_create_shared_link(filename)
+                url = f.url
                 url = url[:len(url)-1] + '1'
                 print('new: ' + url)
 

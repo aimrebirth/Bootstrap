@@ -73,8 +73,8 @@ void run_cmake(const path &dir)
     LOG_INFO(logger, "Running CPPAN");
     execute_and_print({ BOOTSTRAP_PROGRAMS "cppan", "-d", src_dir.string() });
 
-	if (fs::exists(bin_dir / "CMakeCache.txt"))
-		return;
+    if (fs::exists(bin_dir / "CMakeCache.txt"))
+        return;
 
     LOG_INFO(logger, "Running CMake");
     execute_and_print({ cmake.string(),
@@ -148,14 +148,14 @@ void git_checkout(const path &dir, const String &url)
     auto old_path = fs::current_path();
     if (!exists(dir))
         create_directories(dir);
-    current_path(dir);
+    fs::current_path(dir);
 
     if (!exists(dir / ".git"))
         download_sources(url);
     else
         update_sources();
 
-    current_path(old_path);
+    fs::current_path(old_path);
 }
 
 int bootstrap_module_main(int argc, char *argv[], const ptree &data)

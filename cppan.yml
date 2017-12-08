@@ -2,6 +2,9 @@ local_settings:
     build:
         use_shared_libs: false
 
+common_settings:
+    c++: 17
+
 projects:
     core:
         type: lib
