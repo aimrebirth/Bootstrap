@@ -436,7 +436,7 @@ void execute_and_print(Strings args, bool exit_on_error)
     LOG_TRACE(logger, "OUT:\n" << c.out.text);
     LOG_TRACE(logger, "ERR:\n" << c.err.text);
 
-    if (c.exit_code && exit_on_error)
+    if (c.exit_code && c.exit_code.value() && exit_on_error)
     {
         // will die here
         // allowed to fail only after cleanup work
