@@ -61,7 +61,7 @@ path temp_directory_path(const path &subdir)
 
 path get_temp_filename(const path &subdir)
 {
-    return temp_directory_path(subdir) / fs::unique_path();
+    return temp_directory_path(subdir) / unique_path();
 }
 
 //
@@ -216,7 +216,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                     bool file_exists = fs::exists(file);
                     if (file_exists)
                     {
-                        auto file_lwt = fs::last_write_time(file);
+                        auto file_lwt = fs::last_write_time(file).time_since_epoch().count();
                         if (lwt_data.count(file.string()))
                         {
                             auto &file_lwt_data_main = lwt_data.find(file.string())->second;
@@ -275,7 +275,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
 
                         auto file_lwt = fs::last_write_time(file);
                         ptree value;
-                        value.add("lwt", file_lwt);
+                        value.add("lwt", file_lwt.time_since_epoch().count());
                         value.add("md5", new_file_md5);
 
                         std::lock_guard<std::mutex> g(lwt_mutex);
@@ -483,7 +483,7 @@ void enumerate_files(const path &dir, std::set<path> &files)
     {
         try
         {
-            fs::wpath current(file->path());
+            path current(file->path());
             if (fs::is_directory(current))
                 enumerate_files(current, files);
             else

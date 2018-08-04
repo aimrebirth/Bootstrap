@@ -18,6 +18,8 @@
 
 #include "functional.h"
 
+#include <primitives/sw/main.h>
+
 #include <thread>
 
 #include <primitives/log.h>
@@ -57,7 +59,7 @@ try
             {
                 char *dst = argv[++i];
 				std::this_thread::sleep_for(std::chrono::seconds(2));
-                copy_file(argv[0], dst, fs::copy_option::overwrite_if_exists);
+                copy_file(argv[0], dst, fs::copy_options::overwrite_existing);
                 LOG_INFO(logger, "Update successful.");
                 return 0;
             }

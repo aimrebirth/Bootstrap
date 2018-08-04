@@ -58,7 +58,7 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     auto file = BOOTSTRAP_DOWNLOADS + bootstrap_zip;
     auto bak = file + ".bak";
     if (fs::exists(file))
-        fs::copy_file(file, bak, fs::copy_option::overwrite_if_exists);
+        fs::copy_file(file, bak, fs::copy_options::overwrite_existing);
 
     auto bootstrapper_new = BOOTSTRAP_DOWNLOADS "bootstrapper.new";
     download_file(data.get<String>("bootstrap.url"), file);
@@ -74,7 +74,7 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 
     // self update
     auto updater = bootstrapper_new / path(argv[0]).filename();
-    auto exe = absolute(updater).normalize().wstring();
+    auto exe = normalize_string_copy(absolute(updater).wstring());
     auto arg0 = L"\"" + exe + L"\"";
     auto dst = L"\"" + to_wstring(argv[0]) + L"\"";
     if (_wexecl(exe.c_str(), arg0.c_str(), L"--copy", dst.c_str(), 0) == -1)
