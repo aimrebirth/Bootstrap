@@ -39,7 +39,7 @@ DECLARE_STATIC_LOGGER(logger, "core");
 // global data
 //
 
-extern String bootstrap_programs_prefix;
+extern path bootstrap_programs_prefix;
 
 path git = "git";
 
@@ -207,12 +207,16 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                 auto name = repo.second.get<String>("name", "");
                 auto file = dir / (file_prefix + name);
                 auto new_hash_md5 = repo.second.get<String>("md5", "");
-                auto check_path = repo.second.get("check_path", "");
+                String check_path = repo.second.get("check_path", "");
                 bool packed = repo.second.get<bool>("packed", false);
                 String old_file_md5;
+
+                if (!check_path.empty() && check_path[0] == '/')
+                    check_path = check_path.substr(1);
+
                 if (!packed)
                 {
-                    file = (output_dir / check_path).string();
+                    file = output_dir / check_path;
                     bool file_exists = fs::exists(file);
                     if (file_exists)
                     {

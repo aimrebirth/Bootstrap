@@ -21,7 +21,7 @@
 #include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "tools");
 
-String bootstrap_programs_prefix;
+path bootstrap_programs_prefix;
 
 int version()
 {

@@ -26,7 +26,7 @@ DECLARE_STATIC_LOGGER(logger, "updater");
 
 #include <process.h>
 
-String bootstrap_programs_prefix;
+path bootstrap_programs_prefix;
 
 int version()
 {
@@ -55,12 +55,12 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     check_version(data.get<int>("bootstrap.updater.version"));
 
     auto bootstrap_zip = data.get<String>("bootstrap.updater.archive_name");
-    auto file = BOOTSTRAP_DOWNLOADS + bootstrap_zip;
-    auto bak = file + ".bak";
+    auto file = BOOTSTRAP_DOWNLOADS / bootstrap_zip;
+    auto bak = file / ".bak";
     if (fs::exists(file))
         fs::copy_file(file, bak, fs::copy_options::overwrite_existing);
 
-    auto bootstrapper_new = BOOTSTRAP_DOWNLOADS "bootstrapper.new";
+    auto bootstrapper_new = BOOTSTRAP_DOWNLOADS / "bootstrapper.new";
     download_file(data.get<String>("bootstrap.url"), file);
     fs::remove_all(bootstrapper_new);
     unpack_file(file, bootstrapper_new);

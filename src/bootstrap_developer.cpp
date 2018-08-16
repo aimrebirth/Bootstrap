@@ -26,7 +26,7 @@
 #include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "developer");
 
-String bootstrap_programs_prefix;
+path bootstrap_programs_prefix;
 path cmake = "cmake";
 
 int version()
@@ -56,7 +56,7 @@ void create_project_files(const path &dir)
     if (exists(uproject))
     {
         LOG_INFO(logger, "Creating project files");
-        execute_and_print({ bootstrap_programs_prefix + uvs, "/projectfiles", uproject.string() });
+        execute_and_print({ (bootstrap_programs_prefix / uvs).u8string(), "/projectfiles", uproject.string() });
     }
 }
 
@@ -71,7 +71,7 @@ void run_cmake(const path &dir)
     auto sln_file = bin_dir / "Engine.sln";
 
     LOG_INFO(logger, "Running CPPAN");
-    execute_and_print({ BOOTSTRAP_PROGRAMS "cppan", "-d", src_dir.string() });
+    execute_and_print({ (BOOTSTRAP_PROGRAMS / "cppan").u8string(), "-d", src_dir.string() });
 
     if (fs::exists(bin_dir / "CMakeCache.txt"))
         return;
@@ -82,7 +82,7 @@ void run_cmake(const path &dir)
         "-B" + bin_dir.string(),
         "-DSWIG_DIR=" + swig_dir.string(),
         "-DSWIG_EXECUTABLE=" + swig_exe.string(),
-        "-DCPPAN_COMMAND=" + fs::absolute(BOOTSTRAP_PROGRAMS "cppan").string(),
+        "-DCPPAN_COMMAND=" + fs::absolute(BOOTSTRAP_PROGRAMS / "cppan").string(),
         "-G", "Visual Studio 15 2017 Win64" });
     if (!exists(sln_file))
         check_return_code(1);
@@ -194,13 +194,13 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 
     LOG_INFO(logger, "Downloading Third Party files...");
     download_files(download_dir, polygon4 / "ThirdParty", data.get_child("data.ThirdParty"));
-    download_file("https://cppan.org/client/cppan-master-Windows-client.zip", BOOTSTRAP_DOWNLOADS + "cppan.zip"s);
-    if (boost::trim_copy(download_file("https://cppan.org/client/cppan-master-Windows-client.zip.md5")) != md5(path(BOOTSTRAP_DOWNLOADS + "cppan.zip"s)))
+    download_file("https://cppan.org/client/cppan-master-Windows-client.zip", BOOTSTRAP_DOWNLOADS / "cppan.zip"s);
+    if (boost::trim_copy(download_file("https://cppan.org/client/cppan-master-Windows-client.zip.md5")) != md5(BOOTSTRAP_DOWNLOADS / "cppan.zip"s))
     {
         LOG_ERROR(logger, "Bad md5 for cppan binary");
         return 1;
     }
-    unpack_file(BOOTSTRAP_DOWNLOADS + "cppan.zip"s, BOOTSTRAP_PROGRAMS);
+    unpack_file(BOOTSTRAP_DOWNLOADS / "cppan.zip"s, BOOTSTRAP_PROGRAMS);
 
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child("developer"));

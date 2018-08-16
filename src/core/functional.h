@@ -45,12 +45,12 @@ extern const int UNTRACKED_CONTENT_DELETER_VERSION;
 extern const int BOOTSTRAPPER_TOOLS;
 
 #define POLYGON4_NAME "Polygon4"
-#define BOOTSTRAP_PREFIX "../"
-#define BOOTSTRAP_DOWNLOADS "BootstrapDownloads/"
-#define BOOTSTRAP_PROGRAMS "BootstrapPrograms/"
+#define BOOTSTRAP_PREFIX path("..")
+#define BOOTSTRAP_DOWNLOADS path("BootstrapDownloads")
+#define BOOTSTRAP_PROGRAMS path("BootstrapPrograms")
 #define BOOTSTRAP_COPY_UPDATER "CopyUpdater"
 
-#define uvs BOOTSTRAP_PROGRAMS "UnrealVersionSelector"
+#define uvs BOOTSTRAP_PROGRAMS / "UnrealVersionSelector"
 
 #define LAST_WRITE_TIME_DATA "lwt.json"
 
