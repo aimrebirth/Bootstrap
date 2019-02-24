@@ -7,3 +7,4 @@ key.txt
 *.lib
 /test*
 /bin*
+.sw
