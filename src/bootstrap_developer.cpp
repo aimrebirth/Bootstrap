@@ -27,7 +27,6 @@
 DECLARE_STATIC_LOGGER(logger, "developer");
 
 path bootstrap_programs_prefix;
-path cmake = "cmake";
 
 int version()
 {
@@ -60,50 +59,26 @@ void create_project_files(const path &dir)
     }
 }
 
-void run_cmake(const path &dir)
+void run_sw(const path &dir)
 {
     auto third_party = dir / "ThirdParty";
-    auto swig_dir = third_party / "swig";
-    auto swig_exe = swig_dir / "swig";
-    auto tools_dir = third_party / "tools";
     auto src_dir = third_party / "Engine";
-    auto bin_dir = src_dir / "Win64";
-    auto sln_file = bin_dir / "Engine.sln";
 
-    LOG_INFO(logger, "Running CPPAN");
-    execute_and_print({ (BOOTSTRAP_PROGRAMS / "cppan").u8string(), "-d", src_dir.string() });
-
-    if (fs::exists(bin_dir / "CMakeCache.txt"))
-        return;
-
-    LOG_INFO(logger, "Running CMake");
-    execute_and_print({ cmake.string(),
-        "-H" + src_dir.string(),
-        "-B" + bin_dir.string(),
-        "-DSWIG_DIR=" + swig_dir.string(),
-        "-DSWIG_EXECUTABLE=" + swig_exe.string(),
-        "-DCPPAN_COMMAND=" + fs::absolute(BOOTSTRAP_PROGRAMS / "cppan").string(),
-        "-G", "Visual Studio 15 2017 Win64" });
-    if (!exists(sln_file))
-        check_return_code(1);
-}
-
-void build_engine(const path &dir)
-{
-    auto bin_dir = dir / "ThirdParty" / "Engine" / "Win64";
-    auto sln_file = bin_dir / "Engine.sln";
-    if (!exists(sln_file))
-        return;
-    LOG_INFO(logger, "Building Engine");
-    execute_and_print({ cmake.string(), "--build", bin_dir.string(), "--config", "RelWithDebInfo" });
+    LOG_INFO(logger, "Running SW");
+    execute_and_print({ (BOOTSTRAP_PROGRAMS / "sw").u8string(), "-d", src_dir.string(), "build" });
 }
 
 void build_project(const path &dir)
 {
     auto msbuild = primitives::resolve_executable({
+        "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe",
+        "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\MSBuild\\Current\\Bin\\MSBuild.exe",
+        "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe",
+
         "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\MSBuild\\15.0\\Bin\\MSBuild.exe",
         "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Professional\\MSBuild\\15.0\\Bin\\MSBuild.exe",
-        "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\MSBuild\\15.0\\Bin\\MSBuild.exe" });
+        "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\MSBuild\\15.0\\Bin\\MSBuild.exe",
+        });
     if (!msbuild.empty())
     {
         auto sln = dir / "Polygon4.sln";
@@ -163,14 +138,6 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     init();
     check_version(data.get<int>("bootstrap.version"));
 
-    // still init
-    auto has_cmake = primitives::resolve_executable({
-        cmake,
-        R"(c:\Program Files\CMake\bin\cmake.exe)",
-        R"(c:\Program Files (x86)\CMake\bin\cmake.exe)" });
-    if (!has_cmake.empty())
-        cmake = has_cmake;
-
     //
     auto polygon4 = path(data.get<String>("name") + "Developer");
     path base_dir = fs::current_path();
@@ -194,24 +161,20 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 
     LOG_INFO(logger, "Downloading Third Party files...");
     download_files(download_dir, polygon4 / "ThirdParty", data.get_child("data.ThirdParty"));
-    download_file("https://cppan.org/client/cppan-master-Windows-client.zip", BOOTSTRAP_DOWNLOADS / "cppan.zip"s);
-    if (boost::trim_copy(download_file("https://cppan.org/client/cppan-master-Windows-client.zip.md5")) != md5(BOOTSTRAP_DOWNLOADS / "cppan.zip"s))
+    download_file("https://software-network.org/client/sw-master-windows-client.zip", BOOTSTRAP_DOWNLOADS / "sw.zip"s);
+    if (boost::trim_copy(download_file("https://software-network.org/client/sw-master-windows-client.zip")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
     {
-        LOG_ERROR(logger, "Bad md5 for cppan binary");
+        LOG_ERROR(logger, "Bad md5 for sw binary");
         return 1;
     }
-    unpack_file(BOOTSTRAP_DOWNLOADS / "cppan.zip"s, BOOTSTRAP_PROGRAMS);
+    unpack_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s, BOOTSTRAP_PROGRAMS);
 
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child("developer"));
 
-    if (!cmake.empty())
-    {
-        run_cmake(polygon4_dir);
-        build_engine(polygon4_dir);
-        create_project_files(polygon4_dir);
-        build_project(polygon4_dir);
-    }
+    run_sw(polygon4_dir);
+    create_project_files(polygon4_dir);
+    build_project(polygon4_dir);
 
     LOG_INFO(logger, "Bootstraped Polygon-4 Developer successfully");
 

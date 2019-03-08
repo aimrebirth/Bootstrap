@@ -1,7 +1,7 @@
 void build(Solution &s)
 {
     auto &p = s.addProject("Polygon4.Bootstrap");
-    DataManager += Git("https://github.com/aimrebirth/Bootstrap", "", "{v}");
+    p += Git("https://github.com/aimrebirth/Bootstrap", "", "{v}");
 
     auto &core = p.addTarget<StaticLibrary>("core");
     core.CPPVersion = CPPLanguageStandard::CPP17;
