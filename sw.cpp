@@ -1,6 +1,6 @@
 void build(Solution &s)
 {
-    auto &p = s.addProject("Polygon4.Bootstrap");
+    auto &p = s.addProject("Polygon4.Bootstrap", "0.0.11");
     p += Git("https://github.com/aimrebirth/Bootstrap", "", "{v}");
 
     auto &core = p.addTarget<StaticLibrary>("core");
