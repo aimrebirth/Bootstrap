@@ -56,7 +56,8 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
 
     auto bootstrap_zip = data.get<String>("bootstrap.updater.archive_name");
     auto file = BOOTSTRAP_DOWNLOADS / bootstrap_zip;
-    auto bak = file / ".bak";
+    auto bak = file;
+    bak += ".bak";
     if (fs::exists(file))
         fs::copy_file(file, bak, fs::copy_options::overwrite_existing);
 

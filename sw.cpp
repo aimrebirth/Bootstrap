@@ -38,7 +38,7 @@ void build(Solution &s)
     }
 
     {
-        auto &t = p.addTarget<Executable>("updater");
+        auto &t = p.addTarget<Executable>("updater", "0.0.1");
         t.CPPVersion = CPPLanguageStandard::CPP17;
         t += "src/updater.cpp";
         t += core;
