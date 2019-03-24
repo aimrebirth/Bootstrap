@@ -159,15 +159,15 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
             manual_download_sources(polygon4_dir / repo.second.get<String>("dir"), repo.second);
     }
 
-    LOG_INFO(logger, "Downloading Third Party files...");
-    download_files(download_dir, polygon4 / "ThirdParty", data.get_child("data.ThirdParty"));
-
     auto sw_url = "https://software-network.org/client/sw-master-windows-client.zip"s;
-    download_file(sw_url, BOOTSTRAP_DOWNLOADS / "sw.zip"s);
-    if (boost::trim_copy(download_file(sw_url + ".md5")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
+    if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || boost::trim_copy(download_file(sw_url + ".md5")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
     {
-        LOG_ERROR(logger, "Bad md5 for sw binary");
-        return 1;
+        download_file(sw_url, BOOTSTRAP_DOWNLOADS / "sw.zip"s);
+        if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || boost::trim_copy(download_file(sw_url + ".md5")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
+        {
+            LOG_ERROR(logger, "Bad md5 for sw binary");
+            return 1;
+        }
     }
     unpack_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s, BOOTSTRAP_PROGRAMS);
 

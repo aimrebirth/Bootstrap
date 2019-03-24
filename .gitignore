@@ -8,3 +8,4 @@ key.txt
 /test*
 /bin*
 .sw
+.vscode

@@ -20,20 +20,6 @@
             "dir": "."
         }
     ],
-    "data": {
-        "ThirdParty": {
-            "file_prefix": "Polygon4_Data_",
-            "files": [
-                {
-                    "name": "ThirdParty.7z",
-                    "url": "https://www.dropbox.com/s/4bmlu539ncc82qc/ThirdParty.7z?dl=1",
-                    "md5": "18a36f25783a00c865e62b41af96095f",
-                    "check_path": "swig",
-                    "packed": true
-                }
-            ]
-        }
-    },
     "release": {
         "redirect": "https://www.dropbox.com/s/znaojezh0q1evqx/release.json?dl=1"
     },
