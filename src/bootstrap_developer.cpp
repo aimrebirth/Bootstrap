@@ -163,13 +163,13 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || boost::trim_copy(download_file(sw_url + ".md5")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
     {
         download_file(sw_url, BOOTSTRAP_DOWNLOADS / "sw.zip"s);
+        unpack_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s, BOOTSTRAP_PROGRAMS);
         if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || boost::trim_copy(download_file(sw_url + ".md5")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
         {
             LOG_ERROR(logger, "Bad md5 for sw binary");
             return 1;
         }
     }
-    unpack_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s, BOOTSTRAP_PROGRAMS);
 
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child("developer"));
