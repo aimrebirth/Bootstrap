@@ -43,7 +43,7 @@ extern path bootstrap_programs_prefix;
 
 path git = "git";
 
-const int BOOTSTRAPPER_VERSION = 12;
+const int BOOTSTRAPPER_VERSION = PACKAGE_VERSION_PATCH;
 const int BOOTSTRAP_UPDATER_VERSION = 1;
 const int UNTRACKED_CONTENT_DELETER_VERSION = 2;
 const int BOOTSTRAPPER_TOOLS = 1;

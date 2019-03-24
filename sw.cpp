@@ -1,10 +1,13 @@
 void build(Solution &s)
 {
-    auto &p = s.addProject("Polygon4.Bootstrap", "0.0.11");
+    auto &p = s.addProject("Polygon4.Bootstrap", "0.0.12");
     p += Git("https://github.com/aimrebirth/Bootstrap", "", "{v}");
 
     auto &core = p.addTarget<StaticLibrary>("core");
+
+    core.PackageDefinitions = true;
     core.CPPVersion = CPPLanguageStandard::CPP17;
+
     core += "src/core/.*"_rr, "Bootstrap.json";
     core.Public += "src/core"_idir;
     core.Public += "_WIN32_WINNT=0x0601"_def;
