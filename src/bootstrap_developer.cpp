@@ -52,7 +52,7 @@ void check_version(int ver)
 void create_project_files(const path &dir)
 {
     auto uproject = dir / "Polygon4.uproject";
-    if (exists(uproject))
+    if (fs::exists(uproject))
     {
         LOG_INFO(logger, "Creating project files");
         execute_and_print({ (bootstrap_programs_prefix / uvs).u8string(), "/projectfiles", uproject.string() });
@@ -87,50 +87,56 @@ void build_project(const path &dir)
     }
 }
 
-void download_submodules()
+static Strings git_command(const path &dir, const Strings &args)
 {
-    execute_and_print({ git.string(), "submodule", "update", "--init", "--recursive" });
+    Strings s;
+    s.push_back(git.u8string());
+    s.push_back("-C");
+    s.push_back(dir.u8string());
+    s.insert(s.end(), args.begin(), args.end());
+    return s;
 }
 
-void download_sources(const String &url)
+void download_submodules(const path &dir)
+{
+    execute_and_print(git_command(dir, { "submodule", "update", "--init", "--recursive" }));
+}
+
+void download_sources(const String &url, const path &dir)
 {
     LOG_INFO(logger, "Downloading latest sources from Github repositories");
-    if (!fs::exists(".git"))
+    if (!fs::exists(dir / ".git"))
     {
-        fs::remove(".gitignore");
-        fs::remove(".gitmodules");
-        execute_and_print({ git.string(), "init" });
-        execute_and_print({ git.string(), "remote", "add", "origin", url });
-        execute_and_print({ git.string(), "fetch" });
-        execute_and_print({ git.string(), "reset", "origin/master", "--hard" });
-        execute_and_print({ git.string(), "submodule", "deinit", "-f", "." });
-        download_submodules();
+        fs::remove(dir / ".gitignore");
+        fs::remove(dir / ".gitmodules");
+        execute_and_print(git_command(dir, { "init" }));
+        execute_and_print(git_command(dir, { "remote", "add", "origin", url }));
+        execute_and_print(git_command(dir, { "fetch" }));
+        execute_and_print(git_command(dir, { "reset", "origin/master", "--hard" }));
+        execute_and_print(git_command(dir, { "submodule", "deinit", "-f", "." }));
+        download_submodules(dir);
     }
     else
-        execute_and_print({ git.string(), "clone", url, "." });
-    download_submodules();
+        execute_and_print(git_command(dir, { "clone", url, "." }));
+    download_submodules(dir);
 }
 
-void update_sources()
+void update_sources(const path &dir)
 {
     LOG_INFO(logger, "Updating latest sources from Github repositories");
-    execute_and_print({ git.string(), "pull", "origin", "master" });
-    download_submodules();
+    execute_and_print(git_command(dir, { "pull", "origin", "master" }));
+    download_submodules(dir);
 }
 
 void git_checkout(const path &dir, const String &url)
 {
-    auto old_path = fs::current_path();
-    if (!exists(dir))
+    if (!fs::exists(dir))
         create_directories(dir);
-    fs::current_path(dir);
 
-    if (!exists(dir / ".git"))
-        download_sources(url);
+    if (!fs::exists(dir / ".git"))
+        download_sources(url, dir);
     else
-        update_sources();
-
-    fs::current_path(old_path);
+        update_sources(dir);
 }
 
 int bootstrap_module_main(int argc, char *argv[], const ptree &data)
