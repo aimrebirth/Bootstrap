@@ -165,17 +165,32 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
             manual_download_sources(polygon4_dir / repo.second.get<String>("dir"), repo.second);
     }
 
-    auto sw_url = "https://software-network.org/client/sw-master-windows-client.zip"s;
-    if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || boost::trim_copy(download_file(sw_url + ".md5")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
+    static auto sw_url = "https://software-network.org/client/sw-master-windows-client.zip"s;
+    auto get_remote_md5 = []()
     {
-        download_file(sw_url, BOOTSTRAP_DOWNLOADS / "sw.zip"s);
+        static auto md5 = boost::trim_copy(download_file(sw_url + ".md5"));
+        return md5;
+    };
+
+    auto unpack_exe = [&get_remote_md5]()
+    {
         unpack_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s, BOOTSTRAP_PROGRAMS);
-        if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || boost::trim_copy(download_file(sw_url + ".md5")) != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
+        if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
         {
             LOG_ERROR(logger, "Bad md5 for sw binary");
-            return 1;
+            return false;
         }
+        return true;
+    };
+
+    if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
+    {
+        download_file(sw_url, BOOTSTRAP_DOWNLOADS / "sw.zip"s);
+        if (!unpack_exe())
+            return false;
     }
+    if (!fs::exists(BOOTSTRAP_PROGRAMS / "sw.exe"s) && !unpack_exe())
+        return false;
 
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child("developer"));

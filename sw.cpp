@@ -1,3 +1,10 @@
+void configure(Build &s)
+{
+    auto ss = s.createSettings();
+    ss.Native.LibrariesType = LibraryType::Static;
+    s.addSettings(ss);
+}
+
 void build(Solution &s)
 {
     auto &p = s.addProject("Polygon4.Bootstrap", "0.0.12");
