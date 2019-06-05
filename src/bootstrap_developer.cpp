@@ -177,20 +177,17 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
         unpack_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s, BOOTSTRAP_PROGRAMS);
         if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
         {
-            LOG_ERROR(logger, "Bad md5 for sw binary");
-            return false;
+            throw SW_RUNTIME_ERROR("Bad md5 for sw binary");
         }
-        return true;
     };
 
     if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
     {
         download_file(sw_url, BOOTSTRAP_DOWNLOADS / "sw.zip"s);
-        if (!unpack_exe())
-            return false;
+        unpack_exe();
     }
-    if (!fs::exists(BOOTSTRAP_PROGRAMS / "sw.exe"s) && !unpack_exe())
-        return false;
+    if (!fs::exists(BOOTSTRAP_PROGRAMS / "sw.exe"s))
+        unpack_exe();
 
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child("developer"));
