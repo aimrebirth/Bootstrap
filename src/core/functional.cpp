@@ -432,7 +432,7 @@ void execute_and_print(Strings args, bool exit_on_error)
     String out, err;
     c.out.action = [&out, &print](const String &str, bool eof) { print(str, eof, out); };
     c.err.action = [&err, &print](const String &str, bool eof) { print(str, eof, err); };
-    c.args = args;
+    c.setArguments(args);
 
     c.execute();
 
