@@ -1,8 +1,10 @@
 void configure(Build &s)
 {
+#ifndef SW_CPP_DRIVER_API_VERSION
     auto ss = s.createSettings();
     ss.Native.LibrariesType = LibraryType::Static;
     s.addSettings(ss);
+#endif
 }
 
 void build(Solution &s)
