@@ -396,6 +396,12 @@ ptree load_data(const path &fn)
 void execute_and_print(Strings args, bool exit_on_error)
 {
     primitives::Command c;
+    c.setArguments(args);
+    execute_and_print(c, exit_on_error);
+}
+
+void execute_and_print(primitives::Command &c, bool exit_on_error)
+{
     auto print = [](const String &str, bool eof, String &out_line)
     {
         if (eof)
@@ -432,7 +438,6 @@ void execute_and_print(Strings args, bool exit_on_error)
     String out, err;
     c.out.action = [&out, &print](const String &str, bool eof) { print(str, eof, out); };
     c.err.action = [&err, &print](const String &str, bool eof) { print(str, eof, err); };
-    c.setArguments(args);
 
     c.execute();
 

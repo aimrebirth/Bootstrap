@@ -49,26 +49,17 @@ void check_version(int ver)
     exit_program(1);
 }
 
-void create_project_files(const path &dir)
+static void create_project_files(const path &dir)
 {
     auto uproject = dir / "Polygon4.uproject";
     if (fs::exists(uproject))
     {
         LOG_INFO(logger, "Creating project files");
-        execute_and_print({ (bootstrap_programs_prefix / uvs).u8string(), "/projectfiles", uproject.string() });
+        execute_and_print({ (bootstrap_programs_prefix / uvs).u8string(), "/projectfiles", uproject.u8string() });
     }
 }
 
-void run_sw(const path &dir)
-{
-    auto third_party = dir / "ThirdParty";
-    auto src_dir = third_party / "Engine";
-
-    LOG_INFO(logger, "Running SW");
-    execute_and_print({ (BOOTSTRAP_PROGRAMS / "sw").u8string(), "-d", src_dir.string(), "build" });
-}
-
-void build_project(const path &dir)
+static void build_project(const path &dir)
 {
     auto msbuild = primitives::resolve_executable({
         "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe",
@@ -83,7 +74,7 @@ void build_project(const path &dir)
     {
         auto sln = dir / "Polygon4.sln";
         LOG_INFO(logger, "Building Polygon4 Unreal project");
-        execute_and_print({ msbuild.string(), sln.string(), "/p:Configuration=Development Editor", "/p:Platform=Win64", "/m" });
+        execute_and_print({ msbuild.u8string(), sln.u8string(), "/p:Configuration=Development Editor", "/p:Platform=Win64", "/m" });
     }
 }
 
@@ -150,7 +141,7 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     path polygon4_dir = base_dir / polygon4;
     path download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
-    fs::create_directory(polygon4_dir);
+    fs::create_directories(polygon4_dir);
 
     git = primitives::resolve_executable(git);
     if (!git.empty())
@@ -192,7 +183,6 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     LOG_INFO(logger, "Downloading main developer files...");
     download_files(download_dir, polygon4, data.get_child("developer"));
 
-    run_sw(polygon4_dir);
     create_project_files(polygon4_dir);
     build_project(polygon4_dir);
 
