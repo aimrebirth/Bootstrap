@@ -55,7 +55,11 @@ static void create_project_files(const path &dir)
     if (fs::exists(uproject))
     {
         LOG_INFO(logger, "Creating project files");
-        execute_and_print({ (bootstrap_programs_prefix / uvs).u8string(), "/projectfiles", uproject.u8string() });
+        execute_and_print({
+            to_string(to_path_string(bootstrap_programs_prefix / uvs)),
+            "/projectfiles",
+            to_string(to_path_string(uproject))
+        });
     }
 }
 
@@ -74,17 +78,23 @@ static void build_project(const path &dir)
     {
         auto sln = dir / "Polygon4.sln";
         LOG_INFO(logger, "Building Polygon4 Unreal project");
-        execute_and_print({ msbuild.u8string(), sln.u8string(), "/p:Configuration=Development Editor", "/p:Platform=Win64", "/m" });
+        execute_and_print({
+            to_string(to_path_string(msbuild)),
+            to_string(to_path_string(sln)),
+            "/p:Configuration=Development Editor",
+            "/p:Platform=Win64",
+            "/m"
+        });
     }
 }
 
-static Strings git_command(const path &dir, const Strings &args)
+static auto git_command(const path &dir, const primitives::command::Arguments &args)
 {
-    Strings s;
-    s.push_back(git.u8string());
+    primitives::command::Arguments s;
+    s.push_back(git);
     s.push_back("-C");
-    s.push_back(dir.u8string());
-    s.insert(s.end(), args.begin(), args.end());
+    s.push_back(dir);
+    s.push_back(args);
     return s;
 }
 
@@ -156,7 +166,13 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
             manual_download_sources(polygon4_dir / repo.second.get<String>("dir"), repo.second);
     }
 
+#ifdef _WIN32
     static auto sw_url = "https://software-network.org/client/sw-master-windows-client.zip"s;
+#elif __APPLE__
+    static auto sw_url = "https://software-network.org/client/sw-master-macos-client.zip"s;
+#else
+    static auto sw_url = "https://software-network.org/client/sw-master-linux-client.zip"s;
+#endif
     auto get_remote_md5 = []()
     {
         static auto md5 = boost::trim_copy(download_file(sw_url + ".md5"));
@@ -166,13 +182,13 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     auto unpack_exe = [&get_remote_md5]()
     {
         unpack_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s, BOOTSTRAP_PROGRAMS);
-        if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
+        if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
         {
             throw SW_RUNTIME_ERROR("Bad md5 for sw binary");
         }
     };
 
-    if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
+    if (!fs::exists(BOOTSTRAP_DOWNLOADS / "sw.zip"s) || get_remote_md5() != md5_file(BOOTSTRAP_DOWNLOADS / "sw.zip"s))
     {
         download_file(sw_url, BOOTSTRAP_DOWNLOADS / "sw.zip"s);
         unpack_exe();

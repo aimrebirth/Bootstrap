@@ -15,7 +15,7 @@ void build(Solution &s)
     auto &core = p.addTarget<StaticLibrary>("core");
 
     core.PackageDefinitions = true;
-    core.CPPVersion = CPPLanguageStandard::CPP17;
+    core += cpp20;
 
     core += "src/core/.*"_rr, "Bootstrap.json";
     core.Public += "src/core"_idir;
@@ -30,35 +30,35 @@ void build(Solution &s)
 
     {
         auto &t = p.addTarget<Executable>("developer");
-        t.CPPVersion = CPPLanguageStandard::CPP17;
+        t += cpp20;
         t += "src/bootstrap_developer.cpp";
         t += core;
     }
 
     {
         auto &t = p.addTarget<Executable>("release");
-        t.CPPVersion = CPPLanguageStandard::CPP17;
+        t += cpp20;
         t += "src/bootstrap_release.cpp";
         t += core;
     }
 
     {
         auto &t = p.addTarget<Executable>("tools");
-        t.CPPVersion = CPPLanguageStandard::CPP17;
+        t += cpp20;
         t += "src/bootstrap_tools.cpp";
         t += core;
     }
 
     {
         auto &t = p.addTarget<Executable>("updater", "0.0.1");
-        t.CPPVersion = CPPLanguageStandard::CPP17;
+        t += cpp20;
         t += "src/updater.cpp";
         t += core;
     }
 
     {
         auto &t = p.addTarget<Executable>("remove_untracked_content");
-        t.CPPVersion = CPPLanguageStandard::CPP17;
+        t += cpp20;
         t += "src/remove_untracked_content.cpp";
         t += core;
     }

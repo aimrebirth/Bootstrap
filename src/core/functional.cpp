@@ -239,7 +239,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                                 else if (old_file_md5.empty())
                                 {
                                     // no md5 was calculated before
-                                    old_file_md5 = md5(file);
+                                    old_file_md5 = md5_file(file);
                                 }
                             }
                             file_lwt_data.put_value(file_lwt);
@@ -249,7 +249,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                         {
                             // no md5 was calculated before
                             LOG_INFO(logger, "Calculating md5 for " << file);
-                            old_file_md5 = md5(file);
+                            old_file_md5 = md5_file(file);
                             if (old_file_md5 == new_hash_md5)
                             {
                                 ptree value;
@@ -268,7 +268,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
 
                         // file is changed in previous download, so md5 is of new file,
                         //  not same in condition above!
-                        auto new_file_md5 = md5(file);
+                        auto new_file_md5 = md5_file(file);
 
                         // recheck hash
                         if (new_file_md5 != new_hash_md5)
@@ -292,7 +292,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                     }
                     return;
                 }
-                if (!fs::exists(file) || md5(file) != new_hash_md5)
+                if (!fs::exists(file) || md5_file(file) != new_hash_md5)
                 {
                     LOG_INFO(logger, "Downloading " << url);
                     download_file(url, file);
@@ -300,7 +300,7 @@ void download_files(const path &dir, const path &output_dir, const ptree &data)
                     // file is changed in previous download, so md5 is of new file,
                     //  not same in condition above!
                     // recheck hash
-                    if (md5(file) != new_hash_md5)
+                    if (md5_file(file) != new_hash_md5)
                     {
                         LOG_FATAL(logger, "Wrong file is located on server! Cannot proceed.");
                         exit_program(1);
@@ -393,7 +393,7 @@ ptree load_data(const path &fn)
     return pt;
 }
 
-void execute_and_print(Strings args, bool exit_on_error)
+void execute_and_print(const primitives::command::Arguments &args, bool exit_on_error)
 {
     primitives::Command c;
     c.setArguments(args);

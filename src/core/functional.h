@@ -99,4 +99,4 @@ void enumerate_files(const path &dir, std::set<path> &files);
 void remove_untracked(const ptree &data, const path &dir, const path &content_dir);
 
 void execute_and_print(primitives::Command &c, bool exit_on_error = true);
-void execute_and_print(Strings args, bool exit_on_error = true);
+void execute_and_print(const primitives::command::Arguments &args, bool exit_on_error = true);
