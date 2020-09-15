@@ -50,7 +50,7 @@ int bootstrap_module_main(int argc, char *argv[], const ptree &data)
     check_version(data.get<int>("tools.remove_untracked_content.version"));
 
     auto polygon4 = data.get<String>("name") + "Developer";
-    auto base_dir = fs::current_path() / BOOTSTRAP_PREFIX;
+    auto base_dir = fs::current_path();
     auto polygon4_dir = base_dir / polygon4;
     auto download_dir = base_dir / BOOTSTRAP_DOWNLOADS;
 
