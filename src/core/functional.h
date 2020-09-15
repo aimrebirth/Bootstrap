@@ -50,8 +50,6 @@ extern const int BOOTSTRAPPER_TOOLS;
 #define BOOTSTRAP_PROGRAMS path("BootstrapPrograms")
 #define BOOTSTRAP_COPY_UPDATER "CopyUpdater"
 
-#define uvs BOOTSTRAP_PROGRAMS / "UnrealVersionSelector"
-
 #define LAST_WRITE_TIME_DATA "lwt.json"
 
 //

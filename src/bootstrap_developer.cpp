@@ -49,12 +49,15 @@ void check_version(int ver)
 
 static void create_project_files(const path &dir)
 {
+    // remove .exe for linux?
+    auto uvs = BOOTSTRAP_PROGRAMS / "UnrealVersionSelector.exe";
+
     auto uproject = dir / "Polygon4.uproject";
     if (fs::exists(uproject))
     {
         LOG_INFO(logger, "Creating project files");
         execute_and_print({
-            to_string(to_path_string(bootstrap_programs_prefix / uvs)),
+            to_string(to_path_string(uvs)),
             "/projectfiles",
             to_string(to_path_string(uproject))
         });
