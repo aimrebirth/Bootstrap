@@ -26,8 +26,6 @@ DECLARE_STATIC_LOGGER(logger, "updater");
 
 #include <process.h>
 
-path bootstrap_programs_prefix;
-
 int version()
 {
     return BOOTSTRAP_UPDATER_VERSION;

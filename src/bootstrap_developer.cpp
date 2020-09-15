@@ -26,8 +26,6 @@
 #include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "developer");
 
-path bootstrap_programs_prefix;
-
 int version()
 {
     return BOOTSTRAPPER_VERSION;

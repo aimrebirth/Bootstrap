@@ -23,8 +23,6 @@
 #include <primitives/log.h>
 DECLARE_STATIC_LOGGER(logger, "rm_untr_cont");
 
-path bootstrap_programs_prefix = BOOTSTRAP_PREFIX;
-
 int version()
 {
     return UNTRACKED_CONTENT_DELETER_VERSION;

@@ -39,8 +39,6 @@ DECLARE_STATIC_LOGGER(logger, "core");
 // global data
 //
 
-extern path bootstrap_programs_prefix;
-
 path git = "git";
 
 const int BOOTSTRAPPER_VERSION = PACKAGE_VERSION_PATCH;
